@@ -26,6 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = format!("{}:{}", &config.host, &config.port);
     let app = Router::new().route("/hello", post(hello));
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+    println!("app listener at {:?}", &addr);
     axum::serve(listener, app).await.unwrap();
     Ok(())
 }
