@@ -5,7 +5,6 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 mod config;
-use config::{Config, ConfigLoader, DotenvLoader};
 
 #[derive(Deserialize)]
 struct EchoUser {
@@ -20,8 +19,7 @@ struct Echo {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //cell tait
-    let loader = DotenvLoader;
-    let config = ConfigLoader::load(&loader)?;
+    let config = config::load()?;
     let addr = format!("{}:{}", &config.host, &config.port);
     let app = Router::new().route("/hello", post(hello));
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
