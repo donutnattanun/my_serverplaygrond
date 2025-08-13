@@ -1,10 +1,10 @@
-use crate::db::models::User;
+use crate::db::user_models::{self, User};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 pub struct UserRequest {
-    pub username: String,
+    pub user_name: String,
     pub email: String,
     pub password: String,
 }
@@ -23,11 +23,21 @@ pub struct UserResponse {
 // when
 //     U : From T
 impl From<User> for UserResponse {
-    fn from(user: User) -> Self {
+    fn from(user_models: User) -> Self {
         Self {
-            id: user.user_id,
-            user_name: user.user_name,
-            email: user.user_email,
+            id: user_models.user_id,
+            user_name: user_models.user_name,
+            email: user_models.user_email,
+        }
+    }
+}
+
+impl From<User> for UserRequest {
+    fn from(user_models: User) -> Self {
+        Self {
+            user_name: user_models.user_name,
+            email: user_models.user_email,
+            password: user_models.password_hash,
         }
     }
 }

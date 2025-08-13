@@ -6,8 +6,17 @@ edition = "2024"
 [dependencies]
 axum = "0.8.4"
 dotenvy = "0.15.7"
-serde = {version="1.0.219",features=["derive"]}
-tokio = {version="1.46.1",features=["full"]}
+serde = { version = "1.0.219", features = ["derive"] }
+tokio = { version = "1.46.1", features = ["full"] }
 tower = "0.5.2"
-sqlx ={ version ="0.8.6", features = ["runtime-tokio","uuid","tls-rustls-ring-native-roots"]}
-uuid ={ version ="1.17.0", features = ["v4","serde","fast-rng"]}
+sqlx = { version = "0.8.6", features = [
+  "runtime-tokio",
+  "uuid",
+  "postgres",
+  "uuid",
+  "macros",
+  "chrono",
+  "tls-rustls-ring-native-roots",
+] }
+uuid = { version = "1.17.0", features = ["v4", "serde", "fast-rng"] }
+async-trait = "0.1.88"

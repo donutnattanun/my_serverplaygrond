@@ -1,2 +1,2 @@
-pub mod models;
+pub mod user_models;
 pub mod sqlx_adapters;
