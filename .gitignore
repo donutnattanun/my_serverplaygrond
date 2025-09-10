@@ -1,0 +1,14 @@
+# Rust build
+/target
+
+# Cargo.lock (สำหรับ lib crate เท่านั้น ถ้าเป็น binary เก็บไว้)
+# Cargo.lock
+
+# IDE/editor
+.idea/
+.vscode/
+*.swp
+
+# Env / secrets
+.env
+
