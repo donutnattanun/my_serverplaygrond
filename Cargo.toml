@@ -3,6 +3,7 @@ resolver = "3"
 members = [
   "application/app_service",
   "domain/model",
+  "domain/service",
   "domain/use_case",
   "infrastructure/adapters/postgre_db",
   "infrastructure/adapters/rest_api",
@@ -10,7 +11,7 @@ members = [
 ]
 
 [workspace.dependencies]
-axum = "0.8.4"
+axum = { version = "0.8.4", features = ["macros"] }
 dotenvy = "0.15.7"
 serde = { version = "1.0.219", features = ["derive"] }
 tokio = { version = "1.46.1", features = ["full"] }

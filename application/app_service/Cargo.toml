@@ -4,5 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.99"
 axum.workspace = true
+load_env = { version = "0.1.0", path = "../../utils/load_env" }
+postgre_db = { version = "0.1.0", path = "../../infrastructure/adapters/postgre_db" }
+rest_api = { version = "0.1.0", path = "../../infrastructure/adapters/rest_api" }
+service = { version = "0.1.0", path = "../../domain/service" }
+sqlx.workspace = true
 tokio.workspace = true
+use_case = { version = "0.1.0", path = "../../domain/use_case" }

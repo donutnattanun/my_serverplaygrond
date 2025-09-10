@@ -4,3 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+axum.workspace = true
+serde.workspace = true
+serde_json = "1.0.143"
+service = { version = "0.1.0", path = "../../../domain/service" }
+use_case = { version = "0.1.0", path = "../../../domain/use_case" }
+uuid.workspace = true
