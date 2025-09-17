@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use use_case::{AuthError, ServiceError, UserRepo, UserUseCase, UserUseCaseDto};
+use use_case::{
+    AuthError, ServiceError, UserLoginOrder, UserRepo, UserUseCase, UserUseCaseDto, Valid,
+};
 use uuid::Uuid;
 
 pub struct UserService {
@@ -14,14 +16,11 @@ impl UserService {
 }
 #[async_trait::async_trait]
 impl UserUseCase for UserService {
-    async fn user_login(
-        &self,
-        username: String,
-        password: String,
-    ) -> Result<(), use_case::AuthError> {
+    async fn user_login(&self, req: Valid<UserLoginOrder>) -> Result<(), use_case::AuthError> {
+        let Valid(order) = req;
         let row = self
             .repo
-            .get_password_by_username(username)
+            .get_password_by_username(order.username.clone())
             .await
             .map_err(|e| AuthError::Db(e.to_string()))?;
         //debug
@@ -30,8 +29,8 @@ impl UserUseCase for UserService {
         let Some(row) = row else {
             return Err(AuthError::Invalid);
         };
-        if row.password_hash != password {
-            println!("{row:?}==?{password:?}");
+        if row.password_hash != order.password {
+            println!("{:?}==?{:?}", row, order.password);
             return Err(AuthError::Invalid);
         };
 

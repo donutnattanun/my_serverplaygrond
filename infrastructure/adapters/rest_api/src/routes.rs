@@ -6,9 +6,9 @@ use axum::{
     http::StatusCode,
     routing::{get, post},
 };
-use use_case::UserUseCase;
+use use_case::{UserLoginOrder, UserUseCase, Valid};
 
-use crate::{UserReq, UserResp, err_map::auth_http, to_http};
+use crate::{UserLoginReq, UserReq, UserResp, dto, err_map::auth_http, to_http};
 type AppState = Arc<dyn UserUseCase + Send + Sync + 'static>;
 
 pub fn routes(svc: AppState) -> Router {
@@ -55,11 +55,10 @@ pub async fn newuser(
 
 pub async fn login(
     State(svc): State<AppState>,
-    Json(req): Json<UserReq>,
+    Json(raw): Json<UserLoginReq>,
 ) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
-    svc.user_login(req.username, req.password)
-        .await
-        .map_err(auth_http)?;
+    let valid_order = raw.try_into().map_err(auth_http)?;
+    svc.user_login(valid_order).await.map_err(auth_http)?;
     Ok((
         StatusCode::OK,
         Json(serde_json::json!({"status":"login Succsssfull"})),

@@ -1,4 +1,4 @@
-pub use dto::{UserReq, UserResp};
+pub use dto::{UserLoginReq, UserReq, UserResp};
 pub use err_map::to_http;
 pub use routes::routes;
 mod dto;

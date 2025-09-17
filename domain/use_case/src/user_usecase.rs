@@ -1,3 +1,4 @@
+use crate::AuthError;
 use crate::UserRepoDto;
 
 //--DTO-----//
@@ -17,7 +18,14 @@ impl From<UserRepoDto> for UserUseCaseDto {
         }
     }
 }
+//--validatetion--//
+pub struct Valid<T>(pub T);
 
+#[derive(Debug)]
+pub struct UserLoginOrder {
+    pub username: String,
+    pub password: String,
+}
 #[derive(thiserror::Error, Debug)]
 pub enum ServiceError {
     #[error("not fond")]
@@ -25,16 +33,10 @@ pub enum ServiceError {
     #[error("error db {0}")]
     Db(String),
 }
-#[derive(thiserror::Error, Debug)]
-pub enum AuthError {
-    #[error("invalid")]
-    Invalid,
-    #[error("error db {0}")]
-    Db(String),
-}
+
 #[async_trait::async_trait]
 pub trait UserUseCase: Send + Sync {
-    async fn user_login(&self, username: String, password: String) -> Result<(), AuthError>;
+    async fn user_login(&self, req: Valid<UserLoginOrder>) -> Result<(), AuthError>;
     async fn create_user(
         &self,
         username: String,
