@@ -8,6 +8,7 @@ members = [
   "infrastructure/adapters/postgre_db",
   "infrastructure/adapters/rest_api",
   "utils/load_env",
+  "utils/log",
 ]
 
 [workspace.dependencies]
@@ -26,3 +27,5 @@ sqlx = { version = "0.8.6", features = [
 uuid = { version = "1.17.0", features = ["v4", "serde", "fast-rng"] }
 async-trait = "0.1.88"
 thiserror = "2.0.15"
+tracing = "0.1"
+tracing-subscriber = "0.3"

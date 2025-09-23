@@ -2,12 +2,12 @@ use postgre_db::SqlxUserRepo;
 use service::UserService;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
-use use_case::UserUseCase;
-type AppState = Arc<dyn UserUseCase + Send + Sync>;
+use tracing::info;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    println!("statrapp");
+    log::init_tracing().expect("log error");
+    info!("app start");
     let env = load_env::load().unwrap();
     let db_url = env.database_url;
     let pool = PgPoolOptions::new()
@@ -18,8 +18,7 @@ async fn main() -> anyhow::Result<()> {
     let svc = Arc::new(UserService::new(repo));
     let app = rest_api::routes(svc);
     let addr_api = format!("{}:{}", env.host, env.port);
-
-    println!("app runing at {:?}", &addr_api);
+    info!("app runing at {:?}", &addr_api);
     let listener = tokio::net::TcpListener::bind(&addr_api).await.unwrap();
     axum::serve(listener, app).await.unwrap();
     Ok(())

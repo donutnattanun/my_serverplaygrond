@@ -32,16 +32,7 @@ pub struct UserLoginReq {
 impl TryFrom<UserLoginReq> for Valid<UserLoginOrder> {
     type Error = AuthError;
     fn try_from(value: UserLoginReq) -> Result<Self, Self::Error> {
-        if value.username.trim().is_empty() {
-            return Err(AuthError::Invalid);
-        }
-        if value.password.len() < 4 {
-            return Err(AuthError::Invalid);
-        }
-        Ok(Valid(UserLoginOrder {
-            username: value.username,
-            password: value.password,
-        }))
+        Valid::<UserLoginOrder>::new(value.username, value.password)
     }
 }
 //--validate_test--//

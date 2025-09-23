@@ -8,9 +8,9 @@ mod test {
     use async_trait::async_trait;
     use std::sync::Arc;
     use use_case::UserRepoDto;
-    fn user_mock_by_id(id: Uuid) -> use_case::UserRepoDto {
+    fn user_mock_by_id(uuid: Uuid) -> use_case::UserRepoDto {
         use_case::UserRepoDto {
-            id: id,
+            id: uuid,
             username: "donut".into(),
             email: "donut@example.com".into(),
             password_hash: "1234".into(),
@@ -28,9 +28,9 @@ mod test {
         }
         async fn new_user(
             &self,
-            username: String,
-            email: String,
-            password: String,
+            _username: String,
+            _email: String,
+            _password: String,
         ) -> Result<Option<UserRepoDto>, use_case::RepoError> {
             unimplemented!()
         }

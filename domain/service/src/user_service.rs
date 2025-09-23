@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use tracing::{error, info, warn};
 use use_case::{
     AuthError, ServiceError, UserLoginOrder, UserRepo, UserUseCase, UserUseCaseDto, Valid,
 };
@@ -10,27 +11,29 @@ pub struct UserService {
 }
 
 impl UserService {
-    pub fn new(repo: Arc<dyn UserRepo + Send + Sync>) -> UserService {
-        Self { repo: repo }
+    pub fn new(new_repo: Arc<dyn UserRepo + Send + Sync>) -> UserService {
+        Self { repo: new_repo }
     }
 }
 #[async_trait::async_trait]
 impl UserUseCase for UserService {
     async fn user_login(&self, req: Valid<UserLoginOrder>) -> Result<(), use_case::AuthError> {
         let Valid(order) = req;
+        info!(username=%order.username,"login attempt");
         let row = self
             .repo
             .get_password_by_username(order.username.clone())
             .await
-            .map_err(|e| AuthError::Db(e.to_string()))?;
-        //debug
-        println!("{row:?}");
-
+            .map_err(|e| {
+                error!(error=%e,"login falid: db error");
+                AuthError::Db(e.to_string())
+            })?;
         let Some(row) = row else {
+            warn!(username=%order.username,"login falid: NotFond");
             return Err(AuthError::Invalid);
         };
         if row.password_hash != order.password {
-            println!("{:?}==?{:?}", row, order.password);
+            warn!(username=%order.username,"login falid: wrong password");
             return Err(AuthError::Invalid);
         };
 

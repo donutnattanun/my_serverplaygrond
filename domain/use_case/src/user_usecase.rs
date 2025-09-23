@@ -18,14 +18,6 @@ impl From<UserRepoDto> for UserUseCaseDto {
         }
     }
 }
-//--validatetion--//
-pub struct Valid<T>(pub T);
-
-#[derive(Debug)]
-pub struct UserLoginOrder {
-    pub username: String,
-    pub password: String,
-}
 #[derive(thiserror::Error, Debug)]
 pub enum ServiceError {
     #[error("not fond")]
@@ -45,4 +37,44 @@ pub trait UserUseCase: Send + Sync {
     ) -> Result<(), ServiceError>;
     async fn get_users(&self) -> Result<Vec<UserUseCaseDto>, ServiceError>;
     async fn get_user(&self, id: String) -> Result<UserUseCaseDto, ServiceError>;
+}
+//--validatetion--//
+pub struct Valid<T>(pub T);
+
+#[derive(Debug)]
+pub struct UserLoginOrder {
+    pub username: String,
+    pub password: String,
+}
+impl Valid<UserLoginOrder> {
+    pub fn new(username: String, password: String) -> Result<Self, AuthError> {
+        if username.trim().is_empty() {
+            return Err(AuthError::Invalid);
+        }
+        if password.len() < 4 {
+            return Err(AuthError::Invalid);
+        }
+        Ok(Valid(UserLoginOrder { username, password }))
+    }
+}
+//------------------//
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn valid_userloginorder_ok() {
+        let got = Valid::new("donut".into(), "1234".into()).expect("error fn Vlid<T>");
+        assert_eq!(got.0.username, "donut");
+        assert_eq!(got.0.password, "1234");
+    }
+    #[test]
+    fn valid_userloginorder_error_case_is_empty() {
+        let got = Valid::new(" ".into(), "12345".into());
+        assert!(matches!(got, Err(AuthError::Invalid)));
+    }
+    #[test]
+    fn valid_userloginorder_error_case_len_less_4() {
+        let got = Valid::new("donut".into(), "123".into());
+        assert!(matches!(got, Err(AuthError::Invalid)));
+    }
 }

@@ -7,9 +7,12 @@ edition = "2024"
 anyhow = "1.0.99"
 axum.workspace = true
 load_env = { version = "0.1.0", path = "../../utils/load_env" }
+log = { version = "0.1.0", path = "../../utils/log" }
 postgre_db = { version = "0.1.0", path = "../../infrastructure/adapters/postgre_db" }
 rest_api = { version = "0.1.0", path = "../../infrastructure/adapters/rest_api" }
 service = { version = "0.1.0", path = "../../domain/service" }
 sqlx.workspace = true
 tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
 use_case = { version = "0.1.0", path = "../../domain/use_case" }
