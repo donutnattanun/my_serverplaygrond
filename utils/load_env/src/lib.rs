@@ -1,6 +1,6 @@
 use dotenvy::dotenv;
 use std::env;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 #[derive(Debug)]
 pub struct Config {
@@ -15,18 +15,19 @@ pub enum LoadEnvError {
     #[error("Env var error")]
     Varfail,
 }
-
 pub fn load() -> Result<Config, LoadEnvError> {
     match dotenv() {
         Ok(path) => {
-            info!(path=?path,"load_env:load from");
+            info!("dotenv load success use env at {:?}", path);
+            var_env()
         }
         Err(e) => {
-            println!(" DontenvLoader error={e:?}");
-            error!(error=%e,"load_env:load error start");
-            return Err(LoadEnvError::NotFond);
+            warn!("fallback try_env form os error::{:?}", e);
+            var_env()
         }
-    };
+    }
+}
+pub fn var_env() -> Result<Config, LoadEnvError> {
     let env_host = env::var("API_HOST").map_err(|e| {
         error!(error=%e,"load_env:load_env error std::var");
         LoadEnvError::Varfail

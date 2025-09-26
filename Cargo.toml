@@ -1,5 +1,5 @@
 [workspace]
-resolver = "3"
+resolver = "2"
 members = [
   "application/app_service",
   "domain/model",
@@ -10,6 +10,8 @@ members = [
   "utils/load_env",
   "utils/log",
 ]
+[workspace.package]
+edition = "2021"
 
 [workspace.dependencies]
 axum = { version = "0.8.4", features = ["macros"] }

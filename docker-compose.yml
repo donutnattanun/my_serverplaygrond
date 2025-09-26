@@ -1,6 +1,22 @@
 version : "3.9"
 
 services :
+  api:
+    build:
+      context: . 
+      dockerfile: DockerFile
+    container_name: my_api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      API_HOST: ${API_HOST}
+      API_PORT: ${API_PORT}
+      DATABASE_URL: ${DATABASE_URL}
+      RUST_LOG: ${RUST_LOG}
+      LOG_FORMAT: ${LOG_FORMAT}
+    
   db:
     image : postgres:16
     container_name : postgres_db

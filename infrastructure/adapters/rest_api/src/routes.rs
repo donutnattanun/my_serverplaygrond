@@ -6,9 +6,9 @@ use axum::{
     http::StatusCode,
     routing::{get, post},
 };
-use use_case::{UserLoginOrder, UserUseCase, Valid};
+use use_case::UserUseCase;
 
-use crate::{UserLoginReq, UserReq, UserResp, dto, err_map::auth_http, to_http};
+use crate::{UserLoginReq, UserReq, UserResp, err_map::auth_http, to_http};
 type AppState = Arc<dyn UserUseCase + Send + Sync + 'static>;
 
 pub fn routes(svc: AppState) -> Router {

@@ -7,8 +7,8 @@ use tracing::info;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     log::init_tracing().expect("log error");
+    let env = load_env::load().expect("env error");
     info!("app start");
-    let env = load_env::load().unwrap();
     let db_url = env.database_url;
     let pool = PgPoolOptions::new()
         .max_connections(5)
