@@ -1,9 +1,0 @@
-[package]
-name = "load_env"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-dotenvy.workspace = true
-thiserror.workspace = true
-tracing.workspace = true

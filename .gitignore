@@ -10,5 +10,5 @@
 *.swp
 
 # Env / secrets
-.env
+core-rust/.env
 

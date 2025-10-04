@@ -1,0 +1,12 @@
+[package]
+name = "use_case"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+async-trait.workspace = true
+axum.workspace = true
+model = { path = "../model" }
+sqlx.workspace = true
+thiserror.workspace = true
+uuid.workspace = true

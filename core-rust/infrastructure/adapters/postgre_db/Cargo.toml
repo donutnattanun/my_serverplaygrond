@@ -1,0 +1,11 @@
+[package]
+name = "postgre_db"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+async-trait.workspace = true
+model = { version = "0.1.0", path = "../../../domain/model" }
+sqlx.workspace = true
+use_case = { version = "0.1.0", path = "../../../domain/use_case" }
+uuid.workspace = true
