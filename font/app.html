@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>App</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="card center">
+    <h2>Welcome 🎉</h2>
+    <p>Logged in successfully. (หน้านี้ยังว่าง ตามสเปก)</p>
+    <div style="margin-top:14px">
+      <button class="btn" id="logoutBtn">Logout</button>
+    </div>
+  </div>
+
+  <script type="module">
+    // ถ้ามี JWT เก็บไว้ — จะเช็คได้ตรงนี้ (ตอนนี้ optional)
+    // ถ้าอยากบังคับให้ต้องมี token ค่อยใส่ redirect กลับหน้า /index.html
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('token'); // ถ้าเก็บไว้
+      location.href = '/index.html';
+    });
+  </script>
+</body>
+</html>
+

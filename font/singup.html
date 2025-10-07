@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Signup</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="card">
+    <h2>Create Account</h2>
+    <p class="center">Just for testing the flow — keep it simple</p>
+
+    <form id="signupForm" class="form" novalidate>
+      <div class="input">
+        <label for="su-username">Username</label>
+        <input id="su-username" name="username" type="text" required>
+      </div>
+      <div class="input">
+        <label for="su-email">Email</label>
+        <input id="su-email" name="email" type="email" required>
+      </div>
+      <div class="input">
+        <label for="su-password">Password</label>
+        <input id="su-password" name="password" type="password" required>
+      </div>
+      <button id="signupBtn" class="btn" type="submit">Sign Up</button>
+    </form>
+
+    <div class="row">
+      <span>Already have an account?</span>
+      <a href="/index.html">Back to login</a>
+    </div>
+  </div>
+
+  <script type="module" src="/singup.js"></script>
+</body>
+</html>
+
