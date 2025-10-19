@@ -5,8 +5,8 @@ members = [
   "domain/model",
   "domain/service",
   "domain/use_case",
-  "infrastructure/adapters/postgre_db",
-  "infrastructure/adapters/rest_api",
+  "infrastructure/postgre_db",
+  "infrastructure/rest_api",
   "utils/load_env",
   "utils/log",
 ]

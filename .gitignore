@@ -1,5 +1,5 @@
 # Rust build
-/target
+**/target
 
 # Cargo.lock (สำหรับ lib crate เท่านั้น ถ้าเป็น binary เก็บไว้)
 # Cargo.lock
@@ -10,5 +10,5 @@
 *.swp
 
 # Env / secrets
-core-rust/.env
+**/.env
 

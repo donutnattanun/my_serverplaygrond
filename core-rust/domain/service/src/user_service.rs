@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use tracing::{error, info, warn};
 use use_case::{
-    AuthError, ServiceError, UserLoginOrder, UserRepo, UserUseCase, UserUseCaseDto, Valid,
+    AuthError, ServiceError, UserLoginOrder, UserRepo, UserSingupOrder, UserUseCase,
+    UserUseCaseDto, Valid,
 };
 use uuid::Uuid;
 
@@ -39,17 +40,16 @@ impl UserUseCase for UserService {
 
         Ok(())
     }
-    async fn create_user(
-        &self,
-        username: String,
-        email: String,
-        password: String,
-    ) -> Result<(), use_case::ServiceError> {
+    async fn create_user(&self, req: Valid<UserSingupOrder>) -> Result<(), use_case::ServiceError> {
+        let Valid(order) = req;
         let row = self
             .repo
-            .new_user(username, email, password)
+            .new_user(order.username, order.email, order.password)
             .await
-            .map_err(|e| ServiceError::Db(e.to_string()))?
+            .map_err(|e| {
+                error!(error=%e,"singup fail : db error");
+                ServiceError::Db(e.to_string())
+            })?
             .ok_or(ServiceError::NotFond)?;
         println!("{row:?}");
         Ok(())

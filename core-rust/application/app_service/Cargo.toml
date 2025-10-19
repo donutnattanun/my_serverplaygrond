@@ -9,8 +9,8 @@ axum.workspace = true
 http.workspace = true
 load_env = { version = "0.1.0", path = "../../utils/load_env" }
 log = { version = "0.1.0", path = "../../utils/log" }
-postgre_db = { version = "0.1.0", path = "../../infrastructure/adapters/postgre_db" }
-rest_api = { version = "0.1.0", path = "../../infrastructure/adapters/rest_api" }
+postgre_db = { version = "0.1.0", path = "../../infrastructure/postgre_db" }
+rest_api = { version = "0.1.0", path = "../../infrastructure/rest_api" }
 service = { version = "0.1.0", path = "../../domain/service" }
 sqlx.workspace = true
 tokio.workspace = true
