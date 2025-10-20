@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 async-trait.workspace = true
+model = { version = "0.1.0", path = "../model" }
 tokio.workspace = true
 tracing.workspace = true
 use_case = { version = "0.1.0", path = "../use_case" }

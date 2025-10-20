@@ -1,4 +1,3 @@
-use argon2::password_hash;
 use thiserror::Error;
 use uuid::Uuid;
 

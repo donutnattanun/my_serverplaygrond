@@ -1,3 +1,5 @@
+use model::Users;
+
 use crate::AuthError;
 use crate::UserRepoDto;
 
@@ -29,9 +31,9 @@ pub enum ServiceError {
 #[async_trait::async_trait]
 pub trait UserUseCase: Send + Sync {
     async fn user_login(&self, req: Valid<UserLoginOrder>) -> Result<(), AuthError>;
-    async fn create_user(&self, req: Valid<UserSingupOrder>) -> Result<(), ServiceError>;
-    async fn get_users(&self) -> Result<Vec<UserUseCaseDto>, ServiceError>;
-    async fn get_user(&self, id: String) -> Result<UserUseCaseDto, ServiceError>;
+    async fn create_user(&self, req: Users) -> Result<(), ServiceError>;
+    async fn get_users(&self) -> Result<Vec<Users>, ServiceError>;
+    async fn get_user(&self, id: String) -> Result<Users, ServiceError>;
 }
 //--validatetion--//
 pub struct Valid<T>(pub T);

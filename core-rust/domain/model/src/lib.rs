@@ -1,2 +1,3 @@
-pub use user::Users;
-mod user;
+pub use users::Users;
+pub mod auth_model;
+pub mod users;

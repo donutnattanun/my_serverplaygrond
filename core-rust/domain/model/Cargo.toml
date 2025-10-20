@@ -8,3 +8,4 @@ argon2 = "0.5.3"
 sqlx.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
+zeroize = "1.8.2"

@@ -1,11 +1,12 @@
 use crate::{RepoError, UserAuthRepoDto, UserRepoDto};
+use model::Users;
 use uuid::Uuid;
 #[async_trait::async_trait]
 pub trait UserRepo: Send + Sync {
     //lagary tair
     //todo ! refactor to chang return Users type
     //for ! use model sruct is universel
-    async fn find_user_by_id(&self, id: Uuid) -> Result<Option<UserRepoDto>, RepoError>;
+    async fn find_user_by_id(&self, id: Uuid) -> Result<Users, RepoError>;
     async fn new_user(
         &self,
         username: String,
@@ -17,4 +18,7 @@ pub trait UserRepo: Send + Sync {
         &self,
         username: String,
     ) -> Result<Option<UserAuthRepoDto>, RepoError>;
+    //soft refactor//
+    async fn create_user(&self, user: Users) -> Result<(), RepoError>;
+    async fn list_users(&self) -> Result<Vec<Users>, RepoError>;
 }

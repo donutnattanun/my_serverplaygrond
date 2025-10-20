@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use model::Users;
 use tracing::{error, info, warn};
 use use_case::{
     AuthError, ServiceError, UserLoginOrder, UserRepo, UserSingupOrder, UserUseCase,
@@ -40,42 +41,30 @@ impl UserUseCase for UserService {
 
         Ok(())
     }
-    async fn create_user(&self, req: Valid<UserSingupOrder>) -> Result<(), use_case::ServiceError> {
-        let Valid(order) = req;
-        let row = self
-            .repo
-            .new_user(order.username, order.email, order.password)
-            .await
-            .map_err(|e| {
-                error!(error=%e,"singup fail : db error");
-                ServiceError::Db(e.to_string())
-            })?
-            .ok_or(ServiceError::NotFond)?;
+    async fn create_user(&self, req: Users) -> Result<(), use_case::ServiceError> {
+        let row = self.repo.create_user(req).await.map_err(|e| {
+            error!(error=%e,"singup fail : db error");
+            ServiceError::Db(e.to_string())
+        })?;
         println!("{row:?}");
         Ok(())
     }
-    async fn get_users(&self) -> Result<Vec<use_case::UserUseCaseDto>, ServiceError> {
+    async fn get_users(&self) -> Result<Vec<Users>, ServiceError> {
         let row = self
             .repo
-            .get_users()
+            .list_users()
             .await
-            .map_err(|e| ServiceError::Db(e.to_string()))?
-            .ok_or(ServiceError::NotFond)?;
-        let dtos: Vec<UserUseCaseDto> = row
-            .into_iter()
-            .map(|repo| UserUseCaseDto::from(repo))
-            .collect();
-        Ok(dtos)
+            .map_err(|e| ServiceError::Db(e.to_string()))?;
+        Ok(row)
     }
-    async fn get_user(&self, id: String) -> Result<UserUseCaseDto, ServiceError> {
+    async fn get_user(&self, id: String) -> Result<Users, ServiceError> {
         let row = self
             .repo
             .find_user_by_id(Uuid::parse_str(&id).unwrap())
             .await
-            .map_err(|e| ServiceError::Db(e.to_string()))?
-            .ok_or(ServiceError::NotFond)?;
+            .map_err(|e| ServiceError::Db(e.to_string()))?;
         //debug
         println!("is id = {id:?}");
-        Ok(UserUseCaseDto::from(row))
+        Ok(row)
     }
 }
