@@ -23,22 +23,7 @@ pub struct UserAuthRepoDto {
 //-- --//
 //-- dao for infar tarit --//
 //should add and tryform for model entity for use in usecase and service later //
-#[derive(sqlx::Type, Debug)]
-#[sqlx(type_name = "acconut_status", rename_all = "lowercase")]
-pub enum Acconut_status {
-    Pending,
-    Active,
-    Susspended,
-    Disable,
-}
 
-#[derive(sqlx::Type, Debug)]
-#[sqlx(type_name = "user_role", rename_all = "lowercase")]
-pub enum Role {
-    User,
-    Admin,
-    Master,
-}
 //-- --//
 #[derive(thiserror::Error, Debug)]
 pub enum RepoError {
