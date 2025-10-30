@@ -7,7 +7,8 @@ mod users_dao;
 pub use auth_case::{
     auth_repo::{AuthRepo, AuthRepoError},
     auth_uescase::{AuthUserCase, AuthUserCaseError},
-    hash_repo::{HashRepo, HasherError},
+    hash_repo::{HashRepo, HasherError, VerifyStatus},
+    jwt_repo::{JwtRepo, JwtRepoError},
     user_repo::{UserRepo, UserRepoError},
 };
 //pub use error::AuthError;

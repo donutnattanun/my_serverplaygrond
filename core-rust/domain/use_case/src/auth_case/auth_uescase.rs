@@ -18,10 +18,16 @@ pub enum AuthUserCaseError {
     CashingFail(String),
     #[error("hasher repo error")]
     HashingFail(String),
+    #[error("jwt repo error")]
+    JwtRepofail(String),
     #[error("model error")]
     ModelFail(String),
     #[error("database repo error")]
     DbFail(String),
-    #[error("Invalid Requet")]
-    InvalidRequet,
+    #[error("BadRequet Requet")]
+    BadRequet,
+    #[error("An Authentication")]
+    Authentication,
+    #[error("Corrupted data")]
+    Corrupted,
 }

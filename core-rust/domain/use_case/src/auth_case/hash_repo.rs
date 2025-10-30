@@ -4,13 +4,21 @@ use thiserror::Error;
 #[async_trait::async_trait]
 pub trait HashRepo: Send + Sync {
     async fn hashing(&self, plain: PasswordPlain) -> Result<PasswordHash, HasherError>;
-    async fn varify(&self, phc: PasswordHash, cadidaie: PasswordPlain) -> Result<(), HasherError>;
+    async fn varify(
+        &self,
+        phc: PasswordHash,
+        cadidaie: PasswordPlain,
+    ) -> Result<VerifyStatus, HasherError>;
 }
 
 #[derive(Debug, Error)]
 pub enum HasherError {
-    #[error("password model error")]
-    PasswordModel(String),
     #[error("engin hash error")]
     EnginError,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VerifyStatus {
+    Pass,
+    Fail,
+    Corrupted,
 }

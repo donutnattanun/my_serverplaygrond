@@ -3,11 +3,11 @@ use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct Users {
-    pub id: Option<Uuid>,
-    pub username: Option<String>,
-    pub email: Option<String>,
-    pub role: Option<Role>,
-    pub status: Option<AcconutStatus>,
+    pub id: Uuid,
+    pub username: String,
+    pub email: String,
+    pub role: Role,
+    pub status: AcconutStatus,
 }
 //#[derive(sqlx::Type, Debug)]
 //#[sqlx(type_name = "acconut_status", rename_all = "lowercase")]

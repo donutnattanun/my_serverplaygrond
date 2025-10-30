@@ -11,4 +11,4 @@
 
 # Env / secrets
 **/.env
-
+**/security
