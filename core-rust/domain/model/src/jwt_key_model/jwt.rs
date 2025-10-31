@@ -9,12 +9,13 @@ pub struct TokenResponse {
     pub token_type: String,    // "Bearer"
 }
 impl TokenResponse {
-    pub fn new(at: String, rt: String, exp: u32, t_type: String) -> Self {
+    pub fn new(at: String, rt_plain: &String, exp: u32) -> Self {
+        //TODO validation
         Self {
             access_token: at,
-            refresh_token: rt,
+            refresh_token: rt_plain.to_string(),
             expires_in: exp,
-            token_type: t_type,
+            token_type: "Bearer".to_string(),
         }
     }
 }
@@ -65,27 +66,30 @@ pub struct SessionRecordBuild {
     role: Role,
     status: AcconutStatus,
     rt_hash: String,
+    rt_exp: i64,
     device: Option<String>,
     ip: Option<String>,
     now: i64,
     cfg: AuthConfig,
 }
 impl SessionRecordBuild {
-    pub fn new(user_id: Uuid, role: Role, status: AcconutStatus, rt_hash: String) -> Self {
-        use std::time::{SystemTime, UNIX_EPOCH};
+    pub fn new(
+        user_id: Uuid,
+        role: Role,
+        status: AcconutStatus,
+        rt_hash: &String,
+        rt_exp: i64,
+        now: i64,
+    ) -> Self {
         Self {
             user_id,
             role,
             status,
-            rt_hash,
+            rt_hash: rt_hash.to_string(),
+            rt_exp,
             device: None,
             ip: None,
-            now: {
-                SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap_or_default() //seft for under flow
-                    .as_secs() as i64
-            },
+            now,
             cfg: AuthConfig::new(900, 2592000, 86400), //default
         }
     }
@@ -105,7 +109,6 @@ impl SessionRecordBuild {
         let session_id = format!("sess_{}", Uuid::new_v4());
         let created_at = self.now;
         let expires_at = created_at + self.cfg.sesion_ttl as i64;
-        let rt_exp = created_at + self.cfg.refresh_ttl as i64;
         SessionRecord {
             user_id: self.user_id,
             session_id,
@@ -114,14 +117,14 @@ impl SessionRecordBuild {
             created_at,
             expires_at,
             rt_hash: self.rt_hash,
-            rt_exp,
+            rt_exp: self.rt_exp,
             device: self.device,
             ip: self.ip,
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AuthConfig {
     pub access_ttl: u32,  // e.g. 900 (15m)
     pub refresh_ttl: u32, // e.g. 2592000 (30d)

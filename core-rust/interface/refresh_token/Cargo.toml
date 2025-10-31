@@ -1,0 +1,9 @@
+[package]
+name = "refresh_token"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+use_case = { version = "0.1.0", path = "../../domain/use_case" }
+async-trait.workspace = true
+rand = "0.9.2"

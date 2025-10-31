@@ -24,6 +24,8 @@ pub enum AuthUserCaseError {
     ModelFail(String),
     #[error("database repo error")]
     DbFail(String),
+    #[error("refresh repo error")]
+    RefechFail(String),
     #[error("BadRequet Requet")]
     BadRequet,
     #[error("An Authentication")]
