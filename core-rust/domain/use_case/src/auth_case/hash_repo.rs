@@ -25,8 +25,10 @@ pub trait HashRepo: Send + Sync {
 
 #[derive(Debug, Error)]
 pub enum HasherError {
-    #[error("engin hash error")]
+    #[error("engin hash error:{0}")]
     EnginError(String),
+    #[error("format error:{0}")]
+    FormatError(String),
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VerifyStatus {

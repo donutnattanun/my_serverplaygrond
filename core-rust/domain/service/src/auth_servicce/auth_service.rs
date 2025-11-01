@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use model::{
-    auth_model::{UserLogin, UserSingup},
+    auth_model::{PasswordPlain, UserLogin, UserSingup},
     jwt::SessionRecordBuild,
     jwt_key_model::jwt::{AuthConfig, TokenResponse},
 };
@@ -66,7 +66,7 @@ impl AuthUserCase for AuthService {
             .varify_password_argon2(phc_db, order.password_plain)
             .await
             .map_err(|e| {
-                error!(error=%e,"hash error error");
+                error!(error=%e,"hash repo error");
                 AuthUserCaseError::HashingFail(e.to_string())
             })?;
         match verify {
@@ -77,7 +77,7 @@ impl AuthUserCase for AuthService {
                     .get_user_by_username(&order.username)
                     .await
                     .map_err(|e| {
-                        error!(error=%e,"db engin");
+                        error!(error=%e,"get_user_by_username fail");
                         AuthUserCaseError::DbFail(e.to_string())
                     })?;
                 let now = self.time_repo.now().await;
@@ -85,12 +85,18 @@ impl AuthUserCase for AuthService {
                     .rt_repo
                     .gen_refresh_token_base64(now, self.auth_cfg.refresh_ttl as i64)
                     .await
-                    .map_err(|e| AuthUserCaseError::RefechFail(e.to_string()))?;
+                    .map_err(|e| {
+                        error!(error=%e,"gen_refresh_token_base64 fail");
+                        AuthUserCaseError::RefechFail(e.to_string())
+                    })?;
                 let rt_hash = self
                     .hash_repo
                     .hash_rt_hmac_sha256_base64(&rt_token.token_plain)
                     .await
-                    .map_err(|e| AuthUserCaseError::HashingFail(e.to_string()))?;
+                    .map_err(|e| {
+                        error!(error=%e,"hash fail ");
+                        AuthUserCaseError::HashingFail(e.to_string())
+                    })?;
                 let session_record = SessionRecordBuild::new(
                     user_row.id,
                     user_row.role,
@@ -104,12 +110,18 @@ impl AuthUserCase for AuthService {
                 self.auth_repo
                     .create_session(&session_record)
                     .await
-                    .map_err(|e| AuthUserCaseError::CashingFail(e.to_string()))?;
+                    .map_err(|e| {
+                        error!(error=%e,"create_session fail");
+                        AuthUserCaseError::CashingFail(e.to_string())
+                    })?;
                 let (at_token, at_exp) = self
                     .jwt_repo
                     .encoder(&session_record, self.auth_cfg.access_ttl as i64)
                     .await
-                    .map_err(|e| AuthUserCaseError::JwtRepofail(e.to_string()))?;
+                    .map_err(|e| {
+                        error!(error=%e,"jwt encode fail ");
+                        AuthUserCaseError::JwtRepofail(e.to_string())
+                    })?;
                 let token_respon =
                     TokenResponse::new(at_token, &rt_token.token_plain, at_exp as u32);
                 return Ok(token_respon);
@@ -125,6 +137,57 @@ impl AuthUserCase for AuthService {
         }
     }
     async fn singup(&self, order: UserSingup) -> Result<(), AuthUserCaseError> {
+        info!(username=%order.username,"singup attempt");
+        let (username_exists, email_exists) = tokio::try_join!(
+            async {
+                let exists = self
+                    .user_repo
+                    .check_username(&order.username)
+                    .await
+                    .map_err(|e| {
+                        error!(error=%e,"user repo ");
+                        AuthUserCaseError::DbFail(e.to_string())
+                    })?
+                    .is_some();
+                if exists {
+                    warn!(order=%order.username,"BadRequet username singup :");
+                }
+                Ok::<bool, AuthUserCaseError>(exists)
+            },
+            async {
+                let exists = self
+                    .user_repo
+                    .check_email(&order.email)
+                    .await
+                    .map_err(|e| {
+                        error!(error=%e,"user repo ");
+                        AuthUserCaseError::DbFail(e.to_string())
+                    })?
+                    .is_some();
+                if exists {
+                    warn!(order=%order.username,"BadRequet Email singup :");
+                }
+                Ok::<bool, AuthUserCaseError>(exists)
+            }
+        )?;
+        if username_exists || email_exists {
+            return Err(AuthUserCaseError::BadRequet);
+        }
+        let phc_hash = self
+            .hash_repo
+            .hashing_password_argon2(order.password_plain)
+            .await
+            .map_err(|e| {
+                error!(error=%e,"hash repo fail");
+                AuthUserCaseError::HashingFail(e.to_string())
+            })?;
+        self.user_repo
+            .creat_user(&order.username, &order.email, phc_hash)
+            .await
+            .map_err(|e| {
+                error!(error=%e,"creat_user fail");
+                AuthUserCaseError::DbFail(e.to_string())
+            })?;
         Ok(())
     }
     async fn logout(&self) {}

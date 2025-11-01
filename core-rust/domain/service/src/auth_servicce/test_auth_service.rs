@@ -4,15 +4,15 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use model::{
-    auth_model::{PasswordHash, UserLogin},
+    auth_model::{PasswordHash, PasswordPlain, UserLogin, UserSingup},
     jwt::AuthConfig,
     jwt_key_model::jwt::{SessionRecord, TokenResponse},
     users::{AcconutStatus, Role, Users},
     users_model::users,
 };
 use use_case::{
-    AuthRepo, AuthUserCase, AuthUserCaseError, HashRepo, JwtRepo, RefreshRepo, RefreshToken,
-    TimeSystemRepo, UserRepo, UserRepoError, VerifyStatus,
+    AuthRepo, AuthUserCase, AuthUserCaseError, HashRepo, HasherError, JwtRepo, RefreshRepo,
+    RefreshToken, TimeSystemRepo, UserRepo, UserRepoError, VerifyStatus,
 };
 use uuid::Uuid;
 
@@ -55,11 +55,33 @@ impl UserRepo for FakeUserRepo {
     ) -> Result<Option<model::users::Users>, use_case::UserRepoError> {
         unimplemented!()
     }
-    async fn creat_user(&self, user: model::users::Users) -> Result<(), use_case::UserRepoError> {
-        unimplemented!()
+    async fn creat_user(
+        &self,
+        username: &str,
+        email: &str,
+        passwordhash: PasswordHash,
+    ) -> Result<(), UserRepoError> {
+        Ok(())
     }
+    async fn check_username(&self, username: &str) -> Result<Option<()>, UserRepoError> {
+        // id test is "donut"
+        if username == "donut" {
+            Ok(Some(()))
+        } else {
+            Ok(None)
+        }
+    }
+
     async fn list_user(&self) -> Result<Vec<model::users::Users>, use_case::UserRepoError> {
         unimplemented!()
+    }
+    async fn check_email(&self, email: &str) -> Result<Option<()>, UserRepoError> {
+        // email_exists is "donut756@exists.com"
+        if email == "donut756@exists.com" {
+            Ok(Some(()))
+        } else {
+            Ok(None)
+        }
     }
 }
 
@@ -90,7 +112,9 @@ impl HashRepo for FakeHashRepo {
         &self,
         ps_plain: model::auth_model::PasswordPlain,
     ) -> Result<PasswordHash, use_case::HasherError> {
-        unimplemented!()
+        let phc_hash = PasswordHash::from_phc("argon2:fake_hash".to_string())
+            .map_err(|e| HasherError::FormatError(e.to_string()))?;
+        Ok(phc_hash)
     }
     async fn varify_rt_hmac_sha256_base64(
         &self,
@@ -252,5 +276,96 @@ async fn login_user_not_found() {
     match err {
         AuthUserCaseError::Authentication => {}
         _ => panic!("expected Authentication, got {err:?}"),
+    }
+}
+
+#[tokio::test]
+async fn singup_success() {
+    let svc = AuthService::new(
+        Arc::new(FakeAuthRepo),
+        Arc::new(FakeHashRepo),
+        Arc::new(FakeUserRepo),
+        Arc::new(FakeJwtRepo),
+        Arc::new(FakeTimeRepo),
+        Arc::new(FakeRefreshRepo),
+        AuthConfig {
+            access_ttl: 900,
+            refresh_ttl: 30 * 24 * 60 * 60,
+            sesion_ttl: 30 * 24 * 60 * 60,
+        },
+    );
+
+    let order = UserSingup {
+        username: "donut_dont_exists".to_string(),
+        email: "donut@donut_dont_exists".to_string(),
+        password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
+    };
+
+    let res = svc.singup(order).await;
+    println!("{res:?}");
+    assert!(res.is_ok());
+}
+
+#[tokio::test]
+async fn singup_username_exists() {
+    let svc = AuthService::new(
+        Arc::new(FakeAuthRepo),
+        Arc::new(FakeHashRepo),
+        Arc::new(FakeUserRepo),
+        Arc::new(FakeJwtRepo),
+        Arc::new(FakeTimeRepo),
+        Arc::new(FakeRefreshRepo),
+        AuthConfig {
+            access_ttl: 900,
+            refresh_ttl: 30 * 24 * 60 * 60,
+            sesion_ttl: 30 * 24 * 60 * 60,
+        },
+    );
+
+    let order = UserSingup {
+        username: "donut".to_string(),
+        email: "donut@donut_dont_exists".to_string(),
+        password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
+    };
+
+    let res = svc.singup(order).await;
+    println!("{res:?}");
+    assert!(res.is_err());
+    let err: AuthUserCaseError = res.err().unwrap();
+    match err {
+        AuthUserCaseError::BadRequet => {}
+        _ => panic!("expected AuthUserCaseError, got {err:?}"),
+    }
+}
+
+#[tokio::test]
+async fn singup_email_exists() {
+    let svc = AuthService::new(
+        Arc::new(FakeAuthRepo),
+        Arc::new(FakeHashRepo),
+        Arc::new(FakeUserRepo),
+        Arc::new(FakeJwtRepo),
+        Arc::new(FakeTimeRepo),
+        Arc::new(FakeRefreshRepo),
+        AuthConfig {
+            access_ttl: 900,
+            refresh_ttl: 30 * 24 * 60 * 60,
+            sesion_ttl: 30 * 24 * 60 * 60,
+        },
+    );
+
+    let order = UserSingup {
+        username: "donut".to_string(),
+        email: "donut@donutexists".to_string(),
+        password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
+    };
+
+    let res = svc.singup(order).await;
+    println!("{res:?}");
+    assert!(res.is_err());
+    let err = res.err().unwrap();
+    match err {
+        AuthUserCaseError::BadRequet => {}
+        _ => panic!("expected AuthUserCaseError, got {err:?}"),
     }
 }

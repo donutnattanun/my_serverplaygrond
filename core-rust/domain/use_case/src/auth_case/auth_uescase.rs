@@ -14,17 +14,17 @@ pub trait AuthUserCase: Send + Sync {
 
 #[derive(Debug, Error)]
 pub enum AuthUserCaseError {
-    #[error("cashing repo error")]
+    #[error("cashing repo error:{0}")]
     CashingFail(String),
-    #[error("hasher repo error")]
+    #[error("hasher repo error:{0}")]
     HashingFail(String),
-    #[error("jwt repo error")]
+    #[error("jwt repo error:{0}")]
     JwtRepofail(String),
-    #[error("model error")]
+    #[error("model error:{0}")]
     ModelFail(String),
-    #[error("database repo error")]
+    #[error("database repo error:{0}")]
     DbFail(String),
-    #[error("refresh repo error")]
+    #[error("refresh repo error:{0}")]
     RefechFail(String),
     #[error("BadRequet Requet")]
     BadRequet,
