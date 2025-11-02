@@ -8,14 +8,21 @@ use thiserror::Error;
 pub trait AuthUserCase: Send + Sync {
     async fn login(&self, order: UserLogin) -> Result<TokenResponse, AuthUserCaseError>;
     async fn singup(&self, order: UserSingup) -> Result<(), AuthUserCaseError>;
-    async fn logout(&self);
-    async fn refresh(&self, order: TokenResponse) -> Result<TokenResponse, AuthUserCaseError>;
+    async fn logout(&self, order: TokenResponse) -> Result<LogoutResult, AuthUserCaseError>;
+    async fn refresh_token(&self, order: TokenResponse)
+    -> Result<TokenResponse, AuthUserCaseError>;
+}
+//---dto----//
+#[derive(Debug, PartialEq, Eq)]
+pub enum LogoutResult {
+    SessionTerminated,
+    SessionNotFond,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq, Eq)]
 pub enum AuthUserCaseError {
-    #[error("cashing repo error:{0}")]
-    CashingFail(String),
+    #[error("auth repo error:{0}")]
+    AuthRepoFail(String),
     #[error("hasher repo error:{0}")]
     HashingFail(String),
     #[error("jwt repo error:{0}")]
@@ -32,4 +39,10 @@ pub enum AuthUserCaseError {
     Authentication,
     #[error("Corrupted data")]
     Corrupted,
+    #[error("PolicyVersion Mismatch")]
+    PolicyVersionMismatch,
+    #[error("Session Notfond")]
+    SessionNotFond,
+    #[error("RefreshExpired")]
+    RefreshExpired,
 }

@@ -2,7 +2,7 @@ mod auth_case;
 //--expot--//
 pub use auth_case::{
     auth_repo::{AuthRepo, AuthRepoError},
-    auth_uescase::{AuthUserCase, AuthUserCaseError},
+    auth_uescase::{AuthUserCase, AuthUserCaseError, LogoutResult},
     hash_repo::{HashRepo, HasherError, VerifyStatus},
     jwt_repo::{JwtRepo, JwtRepoError},
     refresh_repo::{RefreshRepo, RefreshRepoError, RefreshToken},

@@ -5,14 +5,14 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use model::{
     auth_model::{PasswordHash, PasswordPlain, UserLogin, UserSingup},
-    jwt::AuthConfig,
+    jwt::{AuthConfig, Claims, SessionRecordBuild},
     jwt_key_model::jwt::{SessionRecord, TokenResponse},
     users::{AcconutStatus, Role, Users},
     users_model::users,
 };
 use use_case::{
-    AuthRepo, AuthUserCase, AuthUserCaseError, HashRepo, HasherError, JwtRepo, RefreshRepo,
-    RefreshToken, TimeSystemRepo, UserRepo, UserRepoError, VerifyStatus,
+    AuthRepo, AuthUserCase, AuthUserCaseError, HashRepo, HasherError, JwtRepo, JwtRepoError,
+    LogoutResult, RefreshRepo, RefreshToken, TimeSystemRepo, UserRepo, UserRepoError, VerifyStatus,
 };
 use uuid::Uuid;
 
@@ -94,7 +94,6 @@ impl HashRepo for FakeHashRepo {
         phc: model::auth_model::PasswordHash,
         cadidaie: model::auth_model::PasswordPlain,
     ) -> Result<VerifyStatus, use_case::HasherError> {
-        // เทสต์ง่าย ๆ: ถ้า user ส่ง password = "123456" ให้ผ่าน
         let pwd = String::from_utf8(cadidaie.0.to_vec()).unwrap();
         if pwd == "123456" {
             Ok(VerifyStatus::Pass)
@@ -134,12 +133,78 @@ impl AuthRepo for FakeAuthRepo {
     }
     async fn get_sesion_by_sess_id(
         &self,
-        session_id: &String,
-    ) -> Result<SessionRecord, use_case::AuthRepoError> {
-        unimplemented!()
+        session_id: &str,
+    ) -> Result<Option<SessionRecord>, use_case::AuthRepoError> {
+        if session_id == "fake_jti" {
+            let fake_rt_hash = "fake_rt_hash".to_string();
+            let cfg = AuthConfig {
+                access_ttl: 900,
+                refresh_ttl: 30 * 24 * 60 * 60,
+                sesion_ttl: 30 * 24 * 60 * 60,
+                policy_version: 1,
+            };
+            let sessionrecord_ok = SessionRecordBuild::new(
+                Uuid::new_v4(),
+                Role::User,
+                AcconutStatus::Active,
+                &fake_rt_hash,
+                1_700_000_999,
+                1_700_000_000,
+            )
+            .cfg(cfg)
+            .build();
+            return Ok(Some(sessionrecord_ok));
+        } else if session_id == "old_policy_jti" {
+            let fake_rt_hash = "fake_rt_hash".to_string();
+            let cfg = AuthConfig {
+                access_ttl: 900,
+                refresh_ttl: 30 * 24 * 60 * 60,
+                sesion_ttl: 30 * 24 * 60 * 60,
+                policy_version: 0,
+            };
+            let sessionrecord_old_policy = SessionRecordBuild::new(
+                Uuid::new_v4(),
+                Role::User,
+                AcconutStatus::Active,
+                &fake_rt_hash,
+                1_700_000_999,
+                1_700_000_000,
+            )
+            .cfg(cfg)
+            .build();
+            return Ok(Some(sessionrecord_old_policy));
+        } else if session_id == "refresh_expired_jti" {
+            let fake_rt_hash = "fake_rt_hash".to_string();
+            let cfg = AuthConfig {
+                access_ttl: 900,
+                refresh_ttl: 30 * 24 * 60 * 60,
+                sesion_ttl: 30 * 24 * 60 * 60,
+                policy_version: 0,
+            };
+            let sessionrecord_old_policy = SessionRecordBuild::new(
+                Uuid::new_v4(),
+                Role::User,
+                AcconutStatus::Active,
+                &fake_rt_hash,
+                1_600_000_999,
+                1_700_000_000,
+            )
+            .cfg(cfg)
+            .build();
+            return Ok(Some(sessionrecord_old_policy));
+        } else {
+            Ok(None)
+        }
     }
-    async fn kill_sesion_id(&self, session_id: &String) -> Result<(), use_case::AuthRepoError> {
-        unimplemented!()
+
+    async fn kill_sesion_id(&self, session_id: &String) -> Result<bool, use_case::AuthRepoError> {
+        if session_id == "fake_jti" {
+            Ok(true)
+        } else if session_id == "old_policy_jti" {
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 }
 
@@ -163,7 +228,6 @@ impl RefreshRepo for FakeRefreshRepo {
     ) -> Result<use_case::RefreshToken, use_case::RefreshRepoError> {
         let token_fake = "RT_FAKE_TOKEN".to_string();
         let fake_exp = now + rt_ttl;
-
         let token = RefreshToken::new(token_fake, fake_exp);
         Ok(token)
     }
@@ -180,192 +244,259 @@ impl JwtRepo for FakeJwtRepo {
     ) -> Result<(String, i64), use_case::JwtRepoError> {
         Ok(("AT_FAKE.JWT.TOKEN".to_string(), at_ttl))
     }
-    async fn decoder(&self, token: String) -> Result<SessionRecord, use_case::JwtRepoError> {
-        unimplemented!()
+    async fn decoder(&self, token: &str) -> Result<Claims, use_case::JwtRepoError> {
+        //test token is "AT_FAKE.JWT.TOKEN"
+        //jti is  fake_jti
+        //now is fack
+        if token == "AT_FAKE.JWT.TOKEN" {
+            let fake_claims = Claims::new(
+                "fake.sub".to_string(),
+                "fake_jti".to_string(),
+                900 as i64,
+                700_000_000 as i64,
+                1,
+            );
+            Ok(fake_claims)
+        } else if token == "AT_NOTFOND.JWT.TOKEN" {
+            let notfond_claims = Claims::new(
+                "fake.sub".to_string(),
+                "notfond_jti".to_string(),
+                900 as i64,
+                700_000_000 as i64,
+                1,
+            );
+            Ok(notfond_claims)
+        } else if token == "AT_OLD_POLICY.JWT.TOKEN" {
+            let old_policy_claims = Claims::new(
+                "fake.sub".to_string(),
+                "old_policy_jti".to_string(),
+                900 as i64,
+                700_000_000 as i64,
+                0,
+            );
+            Ok(old_policy_claims)
+        } else if token == "AT_REFRESH_EXPIRED.JWT.TOKEN" {
+            let refresh_expired_claims = Claims::new(
+                "fake.sub".to_string(),
+                "refresh_expired_jti".to_string(),
+                900 as i64,
+                700_000_000 as i64,
+                1,
+            );
+            Ok(refresh_expired_claims)
+        } else {
+            Err(JwtRepoError::EnginFail("test".to_string()))
+        }
     }
 }
 
 // =============== tests =============== //
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
 
-#[tokio::test]
-async fn login_success() {
-    let svc = AuthService::new(
-        Arc::new(FakeAuthRepo),
-        Arc::new(FakeHashRepo),
-        Arc::new(FakeUserRepo),
-        Arc::new(FakeJwtRepo),
-        Arc::new(FakeTimeRepo),
-        Arc::new(FakeRefreshRepo),
-        AuthConfig {
-            access_ttl: 900,
-            refresh_ttl: 30 * 24 * 60 * 60,
-            sesion_ttl: 30 * 24 * 60 * 60,
-        },
-    );
-
-    let order = UserLogin {
-        username: "donut".to_string(),
-        // struct นายอาจเป็น PasswordPlain(Zeroizing<Vec<u8>>)
-        password_plain: model::auth_model::PasswordPlain::form_vec(b"123456".to_vec()),
-    };
-
-    let res = svc.login(order).await;
-    println!("{res:?}");
-    assert!(res.is_ok());
-    let token = res.unwrap();
-
-    assert_eq!(token.access_token, "AT_FAKE.JWT.TOKEN");
-    assert_eq!(token.refresh_token, "RT_FAKE_TOKEN");
-    assert_eq!(token.expires_in, 900);
-}
-
-#[tokio::test]
-async fn login_wrong_password() {
-    let svc = AuthService::new(
-        Arc::new(FakeAuthRepo),
-        Arc::new(FakeHashRepo),
-        Arc::new(FakeUserRepo),
-        Arc::new(FakeJwtRepo),
-        Arc::new(FakeTimeRepo),
-        Arc::new(FakeRefreshRepo),
-        AuthConfig {
-            access_ttl: 900,
-            refresh_ttl: 30 * 24 * 60 * 60,
-            sesion_ttl: 30 * 24 * 60 * 60,
-        },
-    );
-
-    let order = UserLogin {
-        username: "donut".to_string(),
-        password_plain: model::auth_model::PasswordPlain::form_vec(b"WRONG".to_vec()),
-    };
-
-    let res = svc.login(order).await;
-    assert!(res.is_err());
-    let err = res.err().unwrap();
-    match err {
-        AuthUserCaseError::BadRequet => {}
-        _ => panic!("expected BadRequet, got {err:?}"),
+    // ----- test support -----
+    fn make_auth_service() -> AuthService {
+        AuthService::new(
+            Arc::new(FakeAuthRepo),
+            Arc::new(FakeHashRepo),
+            Arc::new(FakeUserRepo),
+            Arc::new(FakeJwtRepo),
+            Arc::new(FakeTimeRepo),
+            Arc::new(FakeRefreshRepo),
+            AuthConfig {
+                access_ttl: 900,
+                refresh_ttl: 30 * 24 * 60 * 60,
+                sesion_ttl: 30 * 24 * 60 * 60,
+                policy_version: 1,
+            },
+        )
     }
-}
 
-#[tokio::test]
-async fn login_user_not_found() {
-    let svc = AuthService::new(
-        Arc::new(FakeAuthRepo),
-        Arc::new(FakeHashRepo),
-        Arc::new(FakeUserRepo),
-        Arc::new(FakeJwtRepo),
-        Arc::new(FakeTimeRepo),
-        Arc::new(FakeRefreshRepo),
-        AuthConfig {
-            access_ttl: 900,
-            refresh_ttl: 30 * 24 * 60 * 60,
-            sesion_ttl: 30 * 24 * 60 * 60,
-        },
-    );
-
-    let order = UserLogin {
-        username: "unknown-user".to_string(),
-        password_plain: model::auth_model::PasswordPlain::form_vec(b"123456".to_vec()),
-    };
-
-    let res = svc.login(order).await;
-    assert!(res.is_err());
-    let err = res.err().unwrap();
-    match err {
-        AuthUserCaseError::Authentication => {}
-        _ => panic!("expected Authentication, got {err:?}"),
+    fn make_login_ok() -> UserLogin {
+        UserLogin {
+            username: "donut".to_string(),
+            password_plain: PasswordPlain::form_vec(b"123456".to_vec()),
+        }
     }
-}
 
-#[tokio::test]
-async fn singup_success() {
-    let svc = AuthService::new(
-        Arc::new(FakeAuthRepo),
-        Arc::new(FakeHashRepo),
-        Arc::new(FakeUserRepo),
-        Arc::new(FakeJwtRepo),
-        Arc::new(FakeTimeRepo),
-        Arc::new(FakeRefreshRepo),
-        AuthConfig {
-            access_ttl: 900,
-            refresh_ttl: 30 * 24 * 60 * 60,
-            sesion_ttl: 30 * 24 * 60 * 60,
-        },
-    );
-
-    let order = UserSingup {
-        username: "donut_dont_exists".to_string(),
-        email: "donut@donut_dont_exists".to_string(),
-        password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
-    };
-
-    let res = svc.singup(order).await;
-    println!("{res:?}");
-    assert!(res.is_ok());
-}
-
-#[tokio::test]
-async fn singup_username_exists() {
-    let svc = AuthService::new(
-        Arc::new(FakeAuthRepo),
-        Arc::new(FakeHashRepo),
-        Arc::new(FakeUserRepo),
-        Arc::new(FakeJwtRepo),
-        Arc::new(FakeTimeRepo),
-        Arc::new(FakeRefreshRepo),
-        AuthConfig {
-            access_ttl: 900,
-            refresh_ttl: 30 * 24 * 60 * 60,
-            sesion_ttl: 30 * 24 * 60 * 60,
-        },
-    );
-
-    let order = UserSingup {
-        username: "donut".to_string(),
-        email: "donut@donut_dont_exists".to_string(),
-        password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
-    };
-
-    let res = svc.singup(order).await;
-    println!("{res:?}");
-    assert!(res.is_err());
-    let err: AuthUserCaseError = res.err().unwrap();
-    match err {
-        AuthUserCaseError::BadRequet => {}
-        _ => panic!("expected AuthUserCaseError, got {err:?}"),
+    fn make_login_wrong_password() -> UserLogin {
+        UserLogin {
+            username: "donut".to_string(),
+            password_plain: PasswordPlain::form_vec(b"WRONG".to_vec()),
+        }
     }
-}
+    fn make_login_wrong_username() -> UserLogin {
+        UserLogin {
+            username: "someone".to_string(),
+            password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
+        }
+    }
+    fn make_singup_ok() -> UserSingup {
+        UserSingup {
+            username: "donut_dont_exists".to_string(),
+            email: "donut@donut_dont_exists".to_string(),
+            password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
+        }
+    }
+    fn make_singup_username_exists() -> UserSingup {
+        UserSingup {
+            username: "donut".to_string(),
+            email: "donut@donut_dont_exists".to_string(),
+            password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
+        }
+    }
+    fn make_singup_email_exissts() -> UserSingup {
+        UserSingup {
+            username: "donut".to_string(),
+            email: "donut@donutexists".to_string(),
+            password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
+        }
+    }
+    fn make_token_ok() -> TokenResponse {
+        let fake_rt = "RT_FAKE_TOKEN".to_string();
+        TokenResponse::new("AT_FAKE.JWT.TOKEN".to_string(), &fake_rt, 999)
+    }
+    fn make_token_notfond() -> TokenResponse {
+        let fake_rt = "RT_NOTFOND_TOKEN".to_string();
+        TokenResponse::new("AT_NOTFOND.JWT.TOKEN".to_string(), &fake_rt, 999)
+    }
+    fn make_token_old_policy() -> TokenResponse {
+        let fake_rt = "RT_OLD_POLICY_TOKEN".to_string();
+        TokenResponse::new("AT_OLD_POLICY.JWT.TOKEN".to_string(), &fake_rt, 999)
+    }
+    fn make_token_refresh_expired() -> TokenResponse {
+        let fake_rt = "RT_REFRESH_EXPIRED_TOKEN".to_string();
+        TokenResponse::new("AT_REFRESH_EXPIRED.JWT.TOKEN".to_string(), &fake_rt, 999)
+    }
 
-#[tokio::test]
-async fn singup_email_exists() {
-    let svc = AuthService::new(
-        Arc::new(FakeAuthRepo),
-        Arc::new(FakeHashRepo),
-        Arc::new(FakeUserRepo),
-        Arc::new(FakeJwtRepo),
-        Arc::new(FakeTimeRepo),
-        Arc::new(FakeRefreshRepo),
-        AuthConfig {
-            access_ttl: 900,
-            refresh_ttl: 30 * 24 * 60 * 60,
-            sesion_ttl: 30 * 24 * 60 * 60,
-        },
-    );
+    // ----- tests -----
 
-    let order = UserSingup {
-        username: "donut".to_string(),
-        email: "donut@donutexists".to_string(),
-        password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
-    };
+    #[tokio::test]
+    async fn login_success() {
+        let svc = make_auth_service();
+        let order = make_login_ok();
+        let res = svc.login(order).await;
+        println!("{res:?}");
+        assert!(res.is_ok());
+        let token = res.unwrap();
+        assert_eq!(token.access_token, "AT_FAKE.JWT.TOKEN");
+        assert_eq!(token.refresh_token, "RT_FAKE_TOKEN");
+        assert_eq!(token.expires_in, 900);
+    }
 
-    let res = svc.singup(order).await;
-    println!("{res:?}");
-    assert!(res.is_err());
-    let err = res.err().unwrap();
-    match err {
-        AuthUserCaseError::BadRequet => {}
-        _ => panic!("expected AuthUserCaseError, got {err:?}"),
+    #[tokio::test]
+    async fn login_wrong_password() {
+        let svc = make_auth_service();
+        let order = make_login_wrong_password();
+        let res = svc.login(order).await;
+        assert!(res.is_err());
+        let err = res.err().unwrap();
+        match err {
+            AuthUserCaseError::BadRequet => {}
+            _ => panic!("expected BadRequet, got {err:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn login_user_not_found() {
+        let svc = make_auth_service();
+        let order = make_login_wrong_username();
+        let res = svc.login(order).await;
+        assert!(res.is_err());
+        let err = res.err().unwrap();
+        match err {
+            AuthUserCaseError::Authentication => {}
+            _ => panic!("expected Authentication, got {err:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn singup_success() {
+        let svc = make_auth_service();
+        let order = make_singup_ok();
+        let res = svc.singup(order).await;
+        println!("{res:?}");
+        assert!(res.is_ok());
+    }
+
+    #[tokio::test]
+    async fn singup_username_exists() {
+        let svc = make_auth_service();
+        let order = make_singup_username_exists();
+        let res = svc.singup(order).await;
+        println!("{res:?}");
+        assert!(res.is_err());
+        let err: AuthUserCaseError = res.err().unwrap();
+        match err {
+            AuthUserCaseError::BadRequet => {}
+            _ => panic!("expected AuthUserCaseError, got {err:?}"),
+        }
+    }
+    #[tokio::test]
+    async fn singup_email_exists() {
+        let svc = make_auth_service();
+        let order = make_singup_email_exissts();
+        let res = svc.singup(order).await;
+        println!("{res:?}");
+        assert!(res.is_err());
+        let err = res.err().unwrap();
+        match err {
+            AuthUserCaseError::BadRequet => {}
+            _ => panic!("expected AuthUserCaseError, got {err:?}"),
+        }
+    }
+    #[tokio::test]
+    async fn logout_success() {
+        let svc = make_auth_service();
+        let order = make_token_ok();
+        let res = svc.logout(order).await;
+        assert!(res.is_ok(), "expected Ok(...), got: {:?}", res);
+        let out = res.unwrap();
+        assert_eq!(out, LogoutResult::SessionTerminated);
+    }
+    #[tokio::test]
+    async fn logout_notfond() {
+        let svc = make_auth_service();
+        let order = make_token_notfond();
+        let res = svc.logout(order).await;
+        assert!(res.is_ok(), "expected Ok(...), got: {:?}", res);
+        let out = res.unwrap();
+        assert_eq!(out, LogoutResult::SessionNotFond);
+    }
+    #[tokio::test]
+    async fn refresh_token_ok() {
+        let svc = make_auth_service();
+        let order = make_token_ok();
+        let res = svc.refresh_token(order).await;
+        assert!(res.is_ok(), "expected Ok(...), got: {:?}", res);
+    }
+    #[tokio::test]
+    async fn refresh_token_old_policy() {
+        let svc = make_auth_service();
+        let order = make_token_old_policy();
+        let res = svc.refresh_token(order).await;
+        assert!(res.is_err());
+        let err = res.err().unwrap();
+        assert_eq!(err, AuthUserCaseError::PolicyVersionMismatch);
+    }
+    #[tokio::test]
+    async fn refresh_token_refresh_not_fond() {
+        let svc = make_auth_service();
+        let order = make_token_notfond();
+        let res = svc.refresh_token(order).await;
+        assert!(res.is_err());
+        let err = res.err().unwrap();
+        assert_eq!(err, AuthUserCaseError::SessionNotFond);
+    }
+    #[tokio::test]
+    async fn refresh_token_refresh_expired() {
+        let svc = make_auth_service();
+        let order = make_token_refresh_expired();
+        let res = svc.refresh_token(order).await;
+        assert!(res.is_err());
+        let err = res.err().unwrap();
+        assert_eq!(err, AuthUserCaseError::RefreshExpired);
     }
 }
