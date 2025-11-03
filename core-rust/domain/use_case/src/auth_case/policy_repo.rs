@@ -1,5 +1,6 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use thiserror::Error;
+use tokio::sync::RwLock;
 
 use async_trait::async_trait;
 

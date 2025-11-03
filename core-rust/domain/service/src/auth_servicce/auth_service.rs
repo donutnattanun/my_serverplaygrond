@@ -4,7 +4,6 @@ use model::{
     jwt::SessionRecordBuild,
     jwt_key_model::jwt::{AuthConfig, TokenResponse},
 };
-use core::sync;
 use std::sync::Arc;
 use tracing::{error, info, warn};
 use use_case::{

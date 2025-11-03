@@ -1,3 +1,6 @@
+use std::{clone, sync::Arc};
+
+use crate::auth_service::AuthService;
 use async_trait::async_trait;
 use model::{
     auth_model::{PasswordHash, PasswordPlain, UserLogin, UserSingup},
@@ -6,14 +9,13 @@ use model::{
     users::{AcconutStatus, Role, Users},
     users_model::users,
 };
+use tokio::sync::RwLock;
 use use_case::{
     AuthRepo, AuthUserCase, AuthUserCaseError, HashRepo, HasherError, JwtRepo, JwtRepoError,
-    LogoutResult, PolicyRepo, RefreshRepo, RefreshToken, TimeSystemRepo, UserRepo, UserRepoError,
-    VerifyStatus,
+    LogoutResult, PolicyRepo, PolicyRepoError, RefreshRepo, RefreshToken, TimeSystemRepo, UserRepo,
+    UserRepoError, VerifyStatus,
 };
 use uuid::Uuid;
-
-use crate::auth_service::AuthService;
 
 // =============== fakes =============== //
 
@@ -21,13 +23,15 @@ struct FakeUserRepo;
 
 #[async_trait]
 impl UserRepo for FakeUserRepo {
-    // สมมุติว่าของจริงคืน Option<String> = phc
     async fn get_password_by_username(
         &self,
         username: &str,
     ) -> Result<Option<PasswordHash>, UserRepoError> {
         if username == "donut" {
-            // สมมุติว่าใน DB เก็บ phc แบบนี้
+            let pwh = PasswordHash::from_phc("argon2id$v=19$m=4096,t=3,p=1$SALT$HASH".to_string())
+                .map_err(|e| UserRepoError::EnginError(e.to_string()))?;
+            Ok(Some(pwh))
+        } else if username == "master" {
             let pwh = PasswordHash::from_phc("argon2id$v=19$m=4096,t=3,p=1$SALT$HASH".to_string())
                 .map_err(|e| UserRepoError::EnginError(e.to_string()))?;
             Ok(Some(pwh))
@@ -64,6 +68,8 @@ impl UserRepo for FakeUserRepo {
         // id test is "donut"
         if username == "donut" {
             Ok(Some(()))
+        } else if username == "master" {
+            Ok(Some(()))
         } else {
             Ok(None)
         }
@@ -86,7 +92,7 @@ impl UserRepo for FakeUserRepo {
         user_status: AcconutStatus,
         user_role: Role,
     ) -> Result<(), UserRepoError> {
-        unimplemented!()
+        Ok(())
     }
 }
 
@@ -197,6 +203,25 @@ impl AuthRepo for FakeAuthRepo {
             .cfg(cfg)
             .build();
             return Ok(Some(sessionrecord_old_policy));
+        } else if session_id == "master_ok_jti" {
+            let fake_rt_hash = "master_ok_rt_hash".to_string();
+            let cfg = AuthConfig {
+                access_ttl: 900,
+                refresh_ttl: 30 * 24 * 60 * 60,
+                sesion_ttl: 30 * 24 * 60 * 60,
+            };
+            let sessionrecord_master_ok = SessionRecordBuild::new(
+                Uuid::new_v4(),
+                Role::Master,
+                AcconutStatus::Active,
+                &fake_rt_hash,
+                1_700_000_999,
+                1_700_000_000,
+                1,
+            )
+            .cfg(cfg)
+            .build();
+            return Ok(Some(sessionrecord_master_ok));
         } else {
             Ok(None)
         }
@@ -289,30 +314,66 @@ impl JwtRepo for FakeJwtRepo {
                 1,
             );
             Ok(refresh_expired_claims)
+        } else if token == "AT_FAKE_MASTER.JWT.TOKEN" {
+            let master_ok_claims = Claims::new(
+                "fake.sub".to_string(),
+                "master_ok_jti".to_string(),
+                900 as i64,
+                700_000_000 as i64,
+                1,
+            );
+            Ok(master_ok_claims)
         } else {
             Err(JwtRepoError::EnginFail("test".to_string()))
         }
     }
 }
-struct FakePolicyRepo;
+#[derive(Clone)]
+struct FakePolicyMasterRepo {
+    pub fake_policy_ver: Arc<RwLock<i32>>,
+}
+impl FakePolicyMasterRepo {
+    pub fn new(fack_ver: i32) -> Self {
+        Self {
+            fake_policy_ver: Arc::new(RwLock::new(fack_ver)),
+        }
+    }
+}
 #[async_trait]
-impl PolicyRepo for FakePolicyRepo {
+impl PolicyRepo for FakePolicyMasterRepo {
     async fn get_policy_version(&self) -> Result<i32, use_case::PolicyRepoError> {
-        Ok(1)
+        let res = self.fake_policy_ver.read().await;
+        Ok(*res)
     }
     async fn bump_policy_version(&self) -> Result<i32, use_case::PolicyRepoError> {
-        unimplemented!()
+        let mut ver = self.fake_policy_ver.write().await;
+        *ver += 1;
+        Ok(*ver)
     }
 }
 
 // =============== tests =============== //
 #[cfg(test)]
 mod tests {
+    use crate::MasterService;
+
     use super::*;
-    use std::sync::{Arc, RwLock};
+    use std::sync::Arc;
+    use tokio::sync::RwLock;
+    use use_case::MasterUseCase;
 
     // ----- test support -----
-    fn make_auth_service() -> AuthService {
+    fn make_master_service(fack_poliy: Arc<FakePolicyMasterRepo>) -> MasterService {
+        MasterService::new(
+            Arc::new(FakeUserRepo),
+            fack_poliy,
+            Arc::new(FakeJwtRepo),
+            Arc::new(FakeAuthRepo),
+            Arc::new(FakeHashRepo),
+            Arc::new(FakeTimeRepo),
+        )
+    }
+    fn make_auth_service(fack_poliy: Arc<FakePolicyMasterRepo>) -> AuthService {
         AuthService::new(
             Arc::new(FakeAuthRepo),
             Arc::new(FakeHashRepo),
@@ -320,7 +381,7 @@ mod tests {
             Arc::new(FakeJwtRepo),
             Arc::new(FakeTimeRepo),
             Arc::new(FakeRefreshRepo),
-            Arc::new(FakePolicyRepo),
+            fack_poliy,
             AuthConfig {
                 access_ttl: 900,
                 refresh_ttl: 30 * 24 * 60 * 60,
@@ -329,49 +390,39 @@ mod tests {
         )
     }
 
-    fn make_login_ok() -> UserLogin {
+    fn make_login_user_ok() -> UserLogin {
         UserLogin {
             username: "donut".to_string(),
             password_plain: PasswordPlain::form_vec(b"123456".to_vec()),
         }
     }
-
-    fn make_login_wrong_password() -> UserLogin {
+    fn make_login_master_ok() -> UserLogin {
         UserLogin {
-            username: "donut".to_string(),
-            password_plain: PasswordPlain::form_vec(b"WRONG".to_vec()),
+            username: "master".to_string(),
+            password_plain: PasswordPlain::form_vec(b"123456".to_vec()),
         }
     }
-    fn make_login_wrong_username() -> UserLogin {
-        UserLogin {
-            username: "someone".to_string(),
-            password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
-        }
-    }
-    fn make_singup_ok() -> UserSingup {
-        UserSingup {
-            username: "donut_dont_exists".to_string(),
-            email: "donut@donut_dont_exists".to_string(),
-            password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
-        }
-    }
-    fn make_singup_username_exists() -> UserSingup {
-        UserSingup {
-            username: "donut".to_string(),
-            email: "donut@donut_dont_exists".to_string(),
-            password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
-        }
-    }
-    fn make_singup_email_exissts() -> UserSingup {
-        UserSingup {
-            username: "donut".to_string(),
-            email: "donut@donutexists".to_string(),
-            password_plain: PasswordPlain::form_vec(b"1234".to_vec()),
-        }
-    }
-    fn make_token_ok() -> TokenResponse {
+    fn make_token_user_ok() -> TokenResponse {
         let fake_rt = "RT_FAKE_TOKEN".to_string();
         TokenResponse::new("AT_FAKE.JWT.TOKEN".to_string(), &fake_rt, 999)
+    }
+    fn make_token_master_ok() -> TokenResponse {
+        let fake_rt = "RT_FAKE_MASTER_TOKEN".to_string();
+        TokenResponse::new("AT_FAKE_MASTER.JWT.TOKEN".to_string(), &fake_rt, 999)
+    }
+    pub struct OrderMaster {
+        token: TokenResponse,
+        user_id: Uuid,
+        role: Role,
+        status: AcconutStatus,
+    }
+    fn make_order_master_ok(token: TokenResponse) -> OrderMaster {
+        OrderMaster {
+            token,
+            user_id: Uuid::new_v4(),
+            role: Role::User,
+            status: AcconutStatus::Active,
+        }
     }
     fn make_token_notfond() -> TokenResponse {
         let fake_rt = "RT_NOTFOND_TOKEN".to_string();
@@ -389,129 +440,37 @@ mod tests {
     // ----- tests -----
 
     #[tokio::test]
-    async fn login_success() {
-        let svc = make_auth_service();
-        let order = make_login_ok();
-        let res = svc.login(order).await;
-        println!("{res:?}");
-        assert!(res.is_ok());
-        let token = res.unwrap();
-        assert_eq!(token.access_token, "AT_FAKE.JWT.TOKEN");
-        assert_eq!(token.refresh_token, "RT_FAKE_TOKEN");
-        assert_eq!(token.expires_in, 900);
-    }
+    async fn master_update_user_status_ok() {
+        let policy = FakePolicyMasterRepo::new(1);
+        let auth = make_auth_service(Arc::new(policy.clone()));
+        let master = make_master_service(Arc::new(policy.clone()));
+        let order_user_login = make_token_user_ok();
+        let order_master = make_token_master_ok();
 
-    #[tokio::test]
-    async fn login_wrong_password() {
-        let svc = make_auth_service();
-        let order = make_login_wrong_password();
-        let res = svc.login(order).await;
-        assert!(res.is_err());
-        let err = res.err().unwrap();
-        match err {
-            AuthUserCaseError::BadRequet => {}
-            _ => panic!("expected BadRequet, got {err:?}"),
-        }
-    }
-
-    #[tokio::test]
-    async fn login_user_not_found() {
-        let svc = make_auth_service();
-        let order = make_login_wrong_username();
-        let res = svc.login(order).await;
-        assert!(res.is_err());
-        let err = res.err().unwrap();
-        match err {
-            AuthUserCaseError::Authentication => {}
-            _ => panic!("expected Authentication, got {err:?}"),
-        }
-    }
-
-    #[tokio::test]
-    async fn singup_success() {
-        let svc = make_auth_service();
-        let order = make_singup_ok();
-        let res = svc.singup(order).await;
-        println!("{res:?}");
-        assert!(res.is_ok());
-    }
-
-    #[tokio::test]
-    async fn singup_username_exists() {
-        let svc = make_auth_service();
-        let order = make_singup_username_exists();
-        let res = svc.singup(order).await;
-        println!("{res:?}");
-        assert!(res.is_err());
-        let err: AuthUserCaseError = res.err().unwrap();
-        match err {
-            AuthUserCaseError::BadRequet => {}
-            _ => panic!("expected AuthUserCaseError, got {err:?}"),
-        }
-    }
-    #[tokio::test]
-    async fn singup_email_exists() {
-        let svc = make_auth_service();
-        let order = make_singup_email_exissts();
-        let res = svc.singup(order).await;
-        println!("{res:?}");
-        assert!(res.is_err());
-        let err = res.err().unwrap();
-        match err {
-            AuthUserCaseError::BadRequet => {}
-            _ => panic!("expected AuthUserCaseError, got {err:?}"),
-        }
-    }
-    #[tokio::test]
-    async fn logout_success() {
-        let svc = make_auth_service();
-        let order = make_token_ok();
-        let res = svc.logout(order).await;
-        assert!(res.is_ok(), "expected Ok(...), got: {:?}", res);
-        let out = res.unwrap();
-        assert_eq!(out, LogoutResult::SessionTerminated);
-    }
-    #[tokio::test]
-    async fn logout_notfond() {
-        let svc = make_auth_service();
-        let order = make_token_notfond();
-        let res = svc.logout(order).await;
-        assert!(res.is_ok(), "expected Ok(...), got: {:?}", res);
-        let out = res.unwrap();
-        assert_eq!(out, LogoutResult::SessionNotFond);
-    }
-    #[tokio::test]
-    async fn refresh_token_ok() {
-        let svc = make_auth_service();
-        let order = make_token_ok();
-        let res = svc.refresh_token(order).await;
-        assert!(res.is_ok(), "expected Ok(...), got: {:?}", res);
-    }
-    #[tokio::test]
-    async fn refresh_token_old_policy() {
-        let svc = make_auth_service();
-        let order = make_token_old_policy();
-        let res = svc.refresh_token(order).await;
-        assert!(res.is_err());
-        let err = res.err().unwrap();
+        let opt_res_user = auth.refresh_token(order_user_login).await;
+        assert!(
+            opt_res_user.is_ok(),
+            "expires Ok(...),got:{:?}",
+            opt_res_user
+        );
+        let order_master = make_order_master_ok(order_master);
+        let opt_res_master = master
+            .update_user_status(
+                order_master.token,
+                order_master.user_id,
+                order_master.role,
+                order_master.status,
+            )
+            .await;
+        println!("{opt_res_master:?}");
+        assert!(
+            opt_res_master.is_ok(),
+            "expires Ok(...),got:{:?}",
+            opt_res_master
+        );
+        let opt_res_user_refrech_after_master = auth.refresh_token(opt_res_user.unwrap()).await;
+        assert!(opt_res_user_refrech_after_master.is_err());
+        let err = opt_res_user_refrech_after_master.err().unwrap();
         assert_eq!(err, AuthUserCaseError::PolicyVersionMismatch);
-    }
-    #[tokio::test]
-    async fn refresh_token_refresh_not_fond() {
-        let svc = make_auth_service();
-        let order = make_token_notfond();
-        let res = svc.refresh_token(order).await;
-        assert!(res.is_err());
-        let err = res.err().unwrap();
-        assert_eq!(err, AuthUserCaseError::SessionNotFond);
-    }
-    #[tokio::test]
-    async fn refresh_token_refresh_expired() {
-        let svc = make_auth_service();
-        let order = make_token_refresh_expired();
-        let res = svc.refresh_token(order).await;
-        assert!(res.is_err());
-        let err = res.err().unwrap();
-        assert_eq!(err, AuthUserCaseError::RefreshExpired);
     }
 }

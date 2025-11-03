@@ -9,4 +9,5 @@ axum.workspace = true
 model = { path = "../model" }
 sqlx.workspace = true
 thiserror.workspace = true
+tokio.workspace = true
 uuid.workspace = true

@@ -1,7 +1,7 @@
 //for query data and work flow case //
 use uuid::Uuid;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Users {
     pub id: Uuid,
     pub username: String,
@@ -11,7 +11,7 @@ pub struct Users {
 }
 //#[derive(sqlx::Type, Debug)]
 //#[sqlx(type_name = "acconut_status", rename_all = "lowercase")]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AcconutStatus {
     Pending,
     Active,
@@ -22,7 +22,7 @@ pub enum AcconutStatus {
 //#[derive(sqlx::Type, Debug)]
 //#[sqlx(type_name = "user_role", rename_all = "lowercase")]
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Role {
     User,
     Admin,

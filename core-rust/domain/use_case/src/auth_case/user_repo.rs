@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use model::{
     auth_model::{PasswordHash, UserSingup},
-    users::Users,
+    users::{AcconutStatus, Role, Users},
 };
 use thiserror::Error;
 use uuid::Uuid;
@@ -23,6 +23,12 @@ pub trait UserRepo: Send + Sync {
     async fn list_user(&self) -> Result<Vec<Users>, UserRepoError>;
     async fn check_username(&self, username: &str) -> Result<Option<()>, UserRepoError>;
     async fn check_email(&self, email: &str) -> Result<Option<()>, UserRepoError>;
+    async fn update_user_status_role(
+        &self,
+        user_id: Uuid,
+        user_status: AcconutStatus,
+        user_role: Role,
+    ) -> Result<(), UserRepoError>;
 }
 #[derive(Debug, Error)]
 pub enum UserRepoError {
