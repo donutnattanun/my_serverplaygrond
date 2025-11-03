@@ -33,6 +33,8 @@ pub enum AuthUserCaseError {
     DbFail(String),
     #[error("refresh repo error:{0}")]
     RefechFail(String),
+    #[error("Policyrepo fail repo error:{0}")]
+    PolicyRepoError(String),
     #[error("BadRequet Requet")]
     BadRequet,
     #[error("An Authentication")]

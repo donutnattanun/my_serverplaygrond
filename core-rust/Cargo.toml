@@ -8,7 +8,10 @@ members = [
   "infrastructure/cashing",
   "infrastructure/hashing",
   "infrastructure/postgre_db",
-  "infrastructure/rest_api", "interface/refresh_token", "interface/timesystem",
+  "infrastructure/rest_api",
+  "interface/policy_ver",
+  "interface/refresh_token",
+  "interface/timesystem",
   "utils/load_env",
   "utils/log",
 ]

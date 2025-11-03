@@ -12,7 +12,8 @@ use model::{
 };
 use use_case::{
     AuthRepo, AuthUserCase, AuthUserCaseError, HashRepo, HasherError, JwtRepo, JwtRepoError,
-    LogoutResult, RefreshRepo, RefreshToken, TimeSystemRepo, UserRepo, UserRepoError, VerifyStatus,
+    LogoutResult, PolicyRepo, RefreshRepo, RefreshToken, TimeSystemRepo, UserRepo, UserRepoError,
+    VerifyStatus,
 };
 use uuid::Uuid;
 
@@ -141,7 +142,6 @@ impl AuthRepo for FakeAuthRepo {
                 access_ttl: 900,
                 refresh_ttl: 30 * 24 * 60 * 60,
                 sesion_ttl: 30 * 24 * 60 * 60,
-                policy_version: 1,
             };
             let sessionrecord_ok = SessionRecordBuild::new(
                 Uuid::new_v4(),
@@ -150,6 +150,7 @@ impl AuthRepo for FakeAuthRepo {
                 &fake_rt_hash,
                 1_700_000_999,
                 1_700_000_000,
+                1,
             )
             .cfg(cfg)
             .build();
@@ -160,7 +161,6 @@ impl AuthRepo for FakeAuthRepo {
                 access_ttl: 900,
                 refresh_ttl: 30 * 24 * 60 * 60,
                 sesion_ttl: 30 * 24 * 60 * 60,
-                policy_version: 0,
             };
             let sessionrecord_old_policy = SessionRecordBuild::new(
                 Uuid::new_v4(),
@@ -169,6 +169,7 @@ impl AuthRepo for FakeAuthRepo {
                 &fake_rt_hash,
                 1_700_000_999,
                 1_700_000_000,
+                0,
             )
             .cfg(cfg)
             .build();
@@ -179,7 +180,6 @@ impl AuthRepo for FakeAuthRepo {
                 access_ttl: 900,
                 refresh_ttl: 30 * 24 * 60 * 60,
                 sesion_ttl: 30 * 24 * 60 * 60,
-                policy_version: 0,
             };
             let sessionrecord_old_policy = SessionRecordBuild::new(
                 Uuid::new_v4(),
@@ -188,6 +188,7 @@ impl AuthRepo for FakeAuthRepo {
                 &fake_rt_hash,
                 1_600_000_999,
                 1_700_000_000,
+                0,
             )
             .cfg(cfg)
             .build();
@@ -289,12 +290,22 @@ impl JwtRepo for FakeJwtRepo {
         }
     }
 }
+struct FakePolicyRepo;
+#[async_trait]
+impl PolicyRepo for FakePolicyRepo {
+    async fn get_policy_version(&self) -> Result<i32, use_case::PolicyRepoError> {
+        Ok(1)
+    }
+    async fn bump_policy_version(&self) -> Result<i32, use_case::PolicyRepoError> {
+        unimplemented!()
+    }
+}
 
 // =============== tests =============== //
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Arc;
+    use std::sync::{Arc, RwLock};
 
     // ----- test support -----
     fn make_auth_service() -> AuthService {
@@ -305,11 +316,11 @@ mod tests {
             Arc::new(FakeJwtRepo),
             Arc::new(FakeTimeRepo),
             Arc::new(FakeRefreshRepo),
+            Arc::new(FakePolicyRepo),
             AuthConfig {
                 access_ttl: 900,
                 refresh_ttl: 30 * 24 * 60 * 60,
                 sesion_ttl: 30 * 24 * 60 * 60,
-                policy_version: 1,
             },
         )
     }

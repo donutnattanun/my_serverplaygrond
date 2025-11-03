@@ -4,11 +4,12 @@ use model::{
     jwt::SessionRecordBuild,
     jwt_key_model::jwt::{AuthConfig, TokenResponse},
 };
+use core::sync;
 use std::sync::Arc;
 use tracing::{error, info, warn};
 use use_case::{
     AuthRepo, AuthUserCase, AuthUserCaseError, HashRepo, JwtRepo, LogoutResult, RefreshRepo,
-    TimeSystemRepo, UserRepo, VerifyStatus,
+    TimeSystemRepo, UserRepo, VerifyStatus,PolicyRepo
 };
 
 pub struct AuthService {
@@ -18,6 +19,7 @@ pub struct AuthService {
     pub jwt_repo: Arc<dyn JwtRepo + Send + Sync>,
     pub time_repo: Arc<dyn TimeSystemRepo + Send + Sync>,
     pub rt_repo: Arc<dyn RefreshRepo + Send + Sync>,
+    pub policy_repo: Arc<dyn PolicyRepo +Send +Sync>,
     pub auth_cfg: AuthConfig,
 }
 
@@ -29,6 +31,7 @@ impl AuthService {
         jwt_repo: Arc<dyn JwtRepo + Send + Sync>,
         time_repo: Arc<dyn TimeSystemRepo + Send + Sync>,
         rt_repo: Arc<dyn RefreshRepo + Send + Sync>,
+        policy_repo: Arc<dyn PolicyRepo + Send +Sync>,
         auth_cfg: AuthConfig,
     ) -> Self {
         Self {
@@ -39,6 +42,7 @@ impl AuthService {
             auth_cfg,
             time_repo,
             rt_repo,
+            policy_repo,
         }
     }
 }
@@ -97,6 +101,10 @@ impl AuthUserCase for AuthService {
                         error!(error=%e,"hash fail ");
                         AuthUserCaseError::HashingFail(e.to_string())
                     })?;
+                let policy_ver=self.policy_repo.get_policy_version().await.map_err(|e|{
+                    error!(error=%e,"policyrepo fail while get policy version");
+                    AuthUserCaseError::PolicyRepoError(e.to_string())
+                })?;
                 let session_record = SessionRecordBuild::new(
                     user_row.id,
                     user_row.role,
@@ -104,6 +112,7 @@ impl AuthUserCase for AuthService {
                     &rt_hash,
                     rt_token.token_exp,
                     now,
+                    policy_ver,
                 )
                 .cfg(self.auth_cfg.clone())
                 .build();
@@ -273,10 +282,15 @@ impl AuthUserCase for AuthService {
         match verify_rt_status {
             VerifyStatus::Pass => {
                 //check policy_ver when admin or master work
-                if session_record.policy_ver != self.auth_cfg.policy_version {
+                    let policy_ver=self.policy_repo.get_policy_version().await.map_err(|e|{
+                    error!(error=%e,"policyrepo fail while get policy version");
+                    AuthUserCaseError::PolicyRepoError(e.to_string())
+                })?;
+
+                if session_record.policy_ver != policy_ver{
                     warn!(user_id=%session_record.user_id, 
                             old=%session_record.policy_ver, 
-                            new=%self.auth_cfg.policy_version, 
+                            now=%policy_ver, 
                             "policy changed, Kill session , force re-login");
                     let _ = self
                         .auth_repo

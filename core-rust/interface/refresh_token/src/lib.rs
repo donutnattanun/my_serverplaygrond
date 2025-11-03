@@ -1,6 +1,7 @@
 use rand::{TryRngCore, rngs::OsRng};
 use use_case::{RefreshRepo, RefreshRepoError, RefreshToken};
 pub struct RefreshTokenService;
+use async_trait::async_trait;
 #[async_trait]
 impl RefreshRepo for RefreshTokenService {
     async fn gen_refresh_token_base64(

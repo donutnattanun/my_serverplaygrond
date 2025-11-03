@@ -56,7 +56,7 @@ pub struct SessionRecord {
     pub rt_exp: i64,            // exp rt only epoch!!!!
     pub device: Option<String>, //for test real maht have
     pub ip: Option<String>,     //for test real maht have
-    pub policy_ver: u32,        //form policy_ver at AuthConfig Struct
+    pub policy_ver: i32,        //form policy_ver at AuthConfig Struct
 }
 #[derive(Debug)]
 pub struct SessionRecordBuild {
@@ -69,6 +69,7 @@ pub struct SessionRecordBuild {
     ip: Option<String>,
     now: i64,
     cfg: AuthConfig,
+    policy_ver: i32,
 }
 impl SessionRecordBuild {
     pub fn new(
@@ -78,6 +79,7 @@ impl SessionRecordBuild {
         rt_hash: &String,
         rt_exp: i64,
         now: i64,
+        policy_ver: i32,
     ) -> Self {
         Self {
             user_id,
@@ -89,6 +91,7 @@ impl SessionRecordBuild {
             ip: None,
             now,
             cfg: AuthConfig::new(900, 2592000, 86400, 0), //default
+            policy_ver,
         }
     }
     pub fn device(mut self, d: String) -> Self {
@@ -117,7 +120,7 @@ impl SessionRecordBuild {
             rt_hash: self.rt_hash,
             rt_exp: self.rt_exp,
             device: self.device,
-            policy_ver: self.cfg.policy_version,
+            policy_ver: self.policy_ver,
             ip: self.ip,
         }
     }
@@ -128,7 +131,6 @@ pub struct AuthConfig {
     pub access_ttl: u32,  // e.g. 900 (15m)
     pub refresh_ttl: u32, // e.g. 2592000 (30d)
     pub sesion_ttl: u32,
-    pub policy_version: u32, // for master and admin reworke ro ban user update sync
 }
 impl AuthConfig {
     pub fn new(at_ttl: u32, rt_ttl: u32, ss_ttl: u32, policy_ver: u32) -> Self {
@@ -136,7 +138,6 @@ impl AuthConfig {
             access_ttl: at_ttl,
             refresh_ttl: rt_ttl,
             sesion_ttl: ss_ttl,
-            policy_version: policy_ver,
         }
     }
 }
