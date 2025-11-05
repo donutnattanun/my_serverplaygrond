@@ -1,19 +1,19 @@
 use thiserror::Error;
 use zeroize::Zeroizing;
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PasswordHash {
     pub phc: String,
 }
 impl PasswordHash {
     pub fn from_phc(phc: String) -> Result<Self, PasswordError> {
         //check real hash logic //
-        if !phc.starts_with("argon2") {
+        if !phc.starts_with("$argon2") {
             return Err(PasswordError::Policy);
         }
         Ok(Self { phc })
     }
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PasswordPlain(pub Zeroizing<Vec<u8>>);
 
 impl PasswordPlain {

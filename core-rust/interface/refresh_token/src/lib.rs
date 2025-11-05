@@ -1,3 +1,4 @@
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use rand::{TryRngCore, rngs::OsRng};
 use use_case::{RefreshRepo, RefreshRepoError, RefreshToken};
 pub struct RefreshTokenService;
@@ -13,7 +14,7 @@ impl RefreshRepo for RefreshTokenService {
         OsRng
             .try_fill_bytes(&mut buff)
             .map_err(|e| RefreshRepoError::Enginfail(e.to_string()))?;
-        let token_plain = URL_SAFE_NO_PAD.encode(buf);
+        let token_plain = URL_SAFE_NO_PAD.encode(buff);
         let token_exp = now + rt_ttl;
         Ok(RefreshToken::new(token_plain, token_exp))
     }

@@ -26,18 +26,18 @@ pub struct Claims {
     pub sub: String, //sup server--this case is follow struct jwt cfg --
     pub jti: String, //metadata --this case is  format!("sess_{}", Uuid::new_v4());
     pub iat: i64,    //time epoch
-    pub exp: i64,    //time exp only sec !!not epoch for validate decoder
+    pub exp: i64,    //time epoch
     pub policy_ver: u32, //version of token use when update user status !! this is for sub check
                      //aurh check in auth store and cfg
 }
 impl Claims {
-    pub fn new(sub: String, jti: String, at_ttl: i64, now: i64, policy_ver: u32) -> Self {
+    pub fn new(sub: String, jti: String, now: i64, at_ttl: i64, policy_ver: u32) -> Self {
         Self {
             iss: "rust.auth.server".to_string(),
             sub,
             jti,
             iat: now,
-            exp: at_ttl,
+            exp: now + at_ttl,
             policy_ver,
         }
     }
@@ -56,7 +56,7 @@ pub struct SessionRecord {
     pub rt_exp: i64,            // exp rt only epoch!!!!
     pub device: Option<String>, //for test real maht have
     pub ip: Option<String>,     //for test real maht have
-    pub policy_ver: i32,        //form policy_ver at AuthConfig Struct
+    pub policy_ver: u32,        //form policy_ver at AuthConfig Struct
 }
 #[derive(Debug)]
 pub struct SessionRecordBuild {
@@ -69,7 +69,7 @@ pub struct SessionRecordBuild {
     ip: Option<String>,
     now: i64,
     cfg: AuthConfig,
-    policy_ver: i32,
+    policy_ver: u32,
 }
 impl SessionRecordBuild {
     pub fn new(
@@ -79,7 +79,7 @@ impl SessionRecordBuild {
         rt_hash: &String,
         rt_exp: i64,
         now: i64,
-        policy_ver: i32,
+        policy_ver: u32,
     ) -> Self {
         Self {
             user_id,
@@ -90,7 +90,7 @@ impl SessionRecordBuild {
             device: None,
             ip: None,
             now,
-            cfg: AuthConfig::new(900, 2592000, 86400, 0), //default
+            cfg: AuthConfig::new(900, 2592000, 86400), //default
             policy_ver,
         }
     }
@@ -133,7 +133,7 @@ pub struct AuthConfig {
     pub sesion_ttl: u32,
 }
 impl AuthConfig {
-    pub fn new(at_ttl: u32, rt_ttl: u32, ss_ttl: u32, policy_ver: u32) -> Self {
+    pub fn new(at_ttl: u32, rt_ttl: u32, ss_ttl: u32) -> Self {
         Self {
             access_ttl: at_ttl,
             refresh_ttl: rt_ttl,

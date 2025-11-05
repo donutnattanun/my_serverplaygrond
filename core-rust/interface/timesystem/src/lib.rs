@@ -1,6 +1,12 @@
+use async_trait::async_trait;
 use std::time::{SystemTime, UNIX_EPOCH};
 use use_case::TimeSystemRepo;
 pub struct TimeSystemService;
+impl TimeSystemService {
+    pub fn new() -> Self {
+        Self
+    }
+}
 
 #[async_trait]
 impl TimeSystemRepo for TimeSystemService {

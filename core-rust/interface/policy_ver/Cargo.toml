@@ -5,6 +5,5 @@ edition.workspace = true
 
 [dependencies]
 async-trait.workspace = true
-refresh_token = { version = "0.1.0", path = "../refresh_token" }
-timesystem = { version = "0.1.0", path = "../timesystem" }
+tokio.workspace = true
 use_case = { version = "0.1.0", path = "../../domain/use_case" }

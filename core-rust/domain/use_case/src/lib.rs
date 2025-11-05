@@ -6,7 +6,7 @@ pub use auth_case::{
     auth_uescase::{AuthUserCase, AuthUserCaseError, LogoutResult},
     hash_repo::{HashRepo, HasherError, VerifyStatus},
     jwt_repo::{JwtRepo, JwtRepoError},
-    policy_repo::{CashPolicyInMemoty, PolicyRepo, PolicyRepoError},
+    policy_repo::{PolicyRepo, PolicyRepoError},
     refresh_repo::{RefreshRepo, RefreshRepoError, RefreshToken},
     time_systems_repo::TimeSystemRepo,
     user_repo::{UserRepo, UserRepoError},

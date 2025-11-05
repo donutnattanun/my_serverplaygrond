@@ -5,7 +5,8 @@ pub trait JwtRepo: Send + Sync {
     async fn encoder(
         &self,
         session: &SessionRecord,
-        at_ttl: i64,
+        at_ttl: u32,
+        now: i64,
     ) -> Result<(String, i64), JwtRepoError>;
     async fn decoder(&self, token: &str) -> Result<Claims, JwtRepoError>;
 }

@@ -14,12 +14,12 @@ pub trait HashRepo: Send + Sync {
     ) -> Result<VerifyStatus, HasherError>;
     async fn hash_rt_hmac_sha256_base64(
         &self,
-        rt_plain_base64: &String,
+        rt_plain_base64: &str,
     ) -> Result<String, HasherError>;
     async fn varify_rt_hmac_sha256_base64(
         &self,
-        rt_plain_base64: &String,
-        rt_hash_bash64: &String,
+        rt_plain_base64: &str,
+        rt_hash_bash64: &str,
     ) -> Result<VerifyStatus, HasherError>;
 }
 
