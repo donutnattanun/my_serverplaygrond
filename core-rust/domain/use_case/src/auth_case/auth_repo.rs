@@ -15,4 +15,6 @@ pub trait AuthRepo: Send + Sync {
 pub enum AuthRepoError {
     #[error("Engin error")]
     EnginFail(String),
+    #[error("Format error")]
+    FormatError(String),
 }

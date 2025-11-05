@@ -5,7 +5,7 @@ members = [
   "domain/model",
   "domain/service",
   "domain/use_case",
-  "infrastructure/cashing",
+  "infrastructure/cashing_redis",
   "infrastructure/postgre_db",
   "infrastructure/rest_api",
   "interface/hasher",

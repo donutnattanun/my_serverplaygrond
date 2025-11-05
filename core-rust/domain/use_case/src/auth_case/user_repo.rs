@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use model::{
-    auth_model::{PasswordHash, UserSingup},
+    auth_model::PasswordHash,
     users::{AcconutStatus, Role, Users},
 };
 use thiserror::Error;
