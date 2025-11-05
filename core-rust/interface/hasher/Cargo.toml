@@ -17,3 +17,5 @@ subtle = "2.6.1"
 zeroize = "1.8.2"
 [dev-dependencies]
 tokio.workspace = true
+refresh_token = { version = "0.1.0", path = "../refresh_token" }
+timesystem = { version = "0.1.0", path = "../timesystem" }

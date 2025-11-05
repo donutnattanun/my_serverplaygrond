@@ -106,6 +106,10 @@ impl HashRepo for HashService {
 }
 #[cfg(test)]
 mod tests {
+    use refresh_token::RefreshTokenService;
+    use timesystem::TimeSystemService;
+    use use_case::{RefreshRepo, TimeSystemRepo};
+
     use super::*;
 
     #[tokio::test]
@@ -133,7 +137,13 @@ mod tests {
     #[tokio::test]
     async fn refresh_token_hmac_base64() {
         let svc = HashService::new_default([9u8; 32]);
-        let rt_plain_b64 = "abcDEF0123_-"; // สมมติ plain token ที่เป็น base64url แล้ว
+        let now = TimeSystemService.now().await;
+        let rt_ttl = 60 as i64;
+        let token_from_gen = RefreshTokenService
+            .gen_refresh_token_base64(now, rt_ttl)
+            .await
+            .expect("refresh_token_hmac_base64 fail");
+        let rt_plain_b64 = &token_from_gen.token_plain; // สมมติ plain token ที่เป็น base64url แล้ว
         let tag = svc.hash_rt_hmac_sha256_base64(rt_plain_b64).await.unwrap();
 
         assert!(matches!(
