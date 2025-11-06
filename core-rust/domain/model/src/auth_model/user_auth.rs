@@ -13,6 +13,17 @@ pub struct UserSingup {
     pub email: String,
     pub password_plain: PasswordPlain,
 }
+impl UserLogin {
+    pub fn new(username: String, password_plain: PasswordPlain) -> Result<Self, AuthFormatError> {
+        if username.is_empty() || username.len() < 4 {
+            return Err(AuthFormatError::UsernameError);
+        }
+        Ok(Self {
+            username,
+            password_plain,
+        })
+    }
+}
 
 impl UserSingup {
     pub fn new(

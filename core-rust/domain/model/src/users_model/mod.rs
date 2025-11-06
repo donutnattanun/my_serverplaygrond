@@ -1,3 +1,3 @@
 pub mod users;
 //--export--//
-pub use users::{AcconutStatus, Role, Users};
+pub use users::{AccountStatus, Role, Users};

@@ -138,7 +138,7 @@ mod tests {
     async fn refresh_token_hmac_base64() {
         let svc = HashService::new_default([9u8; 32]);
         let now = TimeSystemService.now().await;
-        let rt_ttl = 60 as i64;
+        let rt_ttl = 60 as u32;
         let token_from_gen = RefreshTokenService
             .gen_refresh_token_base64(now, rt_ttl)
             .await

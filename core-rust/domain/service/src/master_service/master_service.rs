@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use model::users::{AcconutStatus, Role};
+use model::users::{AccountStatus, Role};
 use tracing::{error, info, warn};
 
 use async_trait::async_trait;
@@ -42,7 +42,7 @@ impl MasterUseCase for MasterService {
         order: model::jwt::TokenResponse,
         order_user_id: uuid::Uuid,
         order_role: model::users::Role,
-        order_status: model::users::AcconutStatus,
+        order_status: model::users::AccountStatus,
     ) -> Result<MasterRespon, MasterUseCaseError> {
         let order_claims = self.jwt_repo.decoder(&order.access_token)
             .await

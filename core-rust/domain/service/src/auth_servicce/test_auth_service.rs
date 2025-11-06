@@ -3,7 +3,7 @@ use model::{
     auth_model::{PasswordHash, PasswordPlain, UserLogin, UserSingup},
     jwt::{AuthConfig, Claims, SessionRecordBuild},
     jwt_key_model::jwt::{SessionRecord, TokenResponse},
-    users::{AcconutStatus, Role, Users},
+    users::{AccountStatus, Role, Users},
     users_model::users,
 };
 use use_case::{
@@ -13,7 +13,7 @@ use use_case::{
 };
 use uuid::Uuid;
 
-use crate::auth_service::AuthService;
+use crate::auth_servicce::auth_service::AuthService;
 
 // =============== fakes =============== //
 
@@ -28,7 +28,7 @@ impl UserRepo for FakeUserRepo {
     ) -> Result<Option<PasswordHash>, UserRepoError> {
         if username == "donut" {
             // สมมุติว่าใน DB เก็บ phc แบบนี้
-            let pwh = PasswordHash::from_phc("argon2id$v=19$m=4096,t=3,p=1$SALT$HASH".to_string())
+            let pwh = PasswordHash::from_phc("$argon2id$v=19$m=4096,t=3,p=1$SALT$HASH".to_string())
                 .map_err(|e| UserRepoError::EnginError(e.to_string()))?;
             Ok(Some(pwh))
         } else {
@@ -41,7 +41,7 @@ impl UserRepo for FakeUserRepo {
             username: username.to_string(),
             email: format!("{username}@example.com"),
             role: Role::User,
-            status: AcconutStatus::Active,
+            status: AccountStatus::Active,
         };
         Ok(users)
     }
@@ -83,7 +83,7 @@ impl UserRepo for FakeUserRepo {
     async fn update_user_status_role(
         &self,
         user_id: Uuid,
-        user_status: AcconutStatus,
+        user_status: AccountStatus,
         user_role: Role,
     ) -> Result<(), UserRepoError> {
         unimplemented!()
@@ -108,7 +108,7 @@ impl HashRepo for FakeHashRepo {
     }
     async fn hash_rt_hmac_sha256_base64(
         &self,
-        rt_plain_base64: &String,
+        rt_plain_base64: &str,
     ) -> Result<String, use_case::HasherError> {
         Ok(format!("hmac{rt_plain_base64}"))
     }
@@ -116,14 +116,14 @@ impl HashRepo for FakeHashRepo {
         &self,
         ps_plain: model::auth_model::PasswordPlain,
     ) -> Result<PasswordHash, use_case::HasherError> {
-        let phc_hash = PasswordHash::from_phc("argon2:fake_hash".to_string())
+        let phc_hash = PasswordHash::from_phc("$argon2:fake_hash".to_string())
             .map_err(|e| HasherError::FormatError(e.to_string()))?;
         Ok(phc_hash)
     }
     async fn varify_rt_hmac_sha256_base64(
         &self,
-        rt_plain_base64: &String,
-        rt_hash_bash64: &String,
+        rt_plain_base64: &str,
+        rt_hash_bash64: &str,
     ) -> Result<VerifyStatus, use_case::HasherError> {
         Ok(VerifyStatus::Pass)
     }
@@ -150,7 +150,7 @@ impl AuthRepo for FakeAuthRepo {
             let sessionrecord_ok = SessionRecordBuild::new(
                 Uuid::new_v4(),
                 Role::User,
-                AcconutStatus::Active,
+                AccountStatus::Active,
                 &fake_rt_hash,
                 1_700_000_999,
                 1_700_000_000,
@@ -169,7 +169,7 @@ impl AuthRepo for FakeAuthRepo {
             let sessionrecord_old_policy = SessionRecordBuild::new(
                 Uuid::new_v4(),
                 Role::User,
-                AcconutStatus::Active,
+                AccountStatus::Active,
                 &fake_rt_hash,
                 1_700_000_999,
                 1_700_000_000,
@@ -188,7 +188,7 @@ impl AuthRepo for FakeAuthRepo {
             let sessionrecord_old_policy = SessionRecordBuild::new(
                 Uuid::new_v4(),
                 Role::User,
-                AcconutStatus::Active,
+                AccountStatus::Active,
                 &fake_rt_hash,
                 1_600_000_999,
                 1_700_000_000,
@@ -229,10 +229,10 @@ impl RefreshRepo for FakeRefreshRepo {
     async fn gen_refresh_token_base64(
         &self,
         now: i64,
-        rt_ttl: i64,
-    ) -> Result<use_case::RefreshToken, use_case::RefreshRepoError> {
+        rt_ttl: u32,
+    ) -> Result<RefreshToken, use_case::RefreshRepoError> {
         let token_fake = "RT_FAKE_TOKEN".to_string();
-        let fake_exp = now + rt_ttl;
+        let fake_exp = now + rt_ttl as i64;
         let token = RefreshToken::new(token_fake, fake_exp);
         Ok(token)
     }
@@ -245,9 +245,10 @@ impl JwtRepo for FakeJwtRepo {
     async fn encoder(
         &self,
         session: &SessionRecord,
-        at_ttl: i64,
-    ) -> Result<(String, i64), use_case::JwtRepoError> {
-        Ok(("AT_FAKE.JWT.TOKEN".to_string(), at_ttl))
+        at_ttl: u32,
+        now: i64,
+    ) -> Result<(String, i64), JwtRepoError> {
+        Ok(("AT_FAKE.JWT.TOKEN".to_string(), { now + at_ttl as i64 }))
     }
     async fn decoder(&self, token: &str) -> Result<Claims, use_case::JwtRepoError> {
         //test token is "AT_FAKE.JWT.TOKEN"
@@ -297,10 +298,10 @@ impl JwtRepo for FakeJwtRepo {
 struct FakePolicyRepo;
 #[async_trait]
 impl PolicyRepo for FakePolicyRepo {
-    async fn get_policy_version(&self) -> Result<i32, use_case::PolicyRepoError> {
+    async fn get_policy_version(&self) -> Result<u32, use_case::PolicyRepoError> {
         Ok(1)
     }
-    async fn bump_policy_version(&self) -> Result<i32, use_case::PolicyRepoError> {
+    async fn bump_policy_version(&self) -> Result<u32, use_case::PolicyRepoError> {
         unimplemented!()
     }
 }
@@ -398,7 +399,7 @@ mod tests {
         let token = res.unwrap();
         assert_eq!(token.access_token, "AT_FAKE.JWT.TOKEN");
         assert_eq!(token.refresh_token, "RT_FAKE_TOKEN");
-        assert_eq!(token.expires_in, 900);
+        assert_eq!(token.expires_in, 1700000900);
     }
 
     #[tokio::test]

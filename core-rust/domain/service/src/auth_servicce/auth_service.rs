@@ -86,7 +86,7 @@ impl AuthUserCase for AuthService {
                 let now = self.time_repo.now().await;
                 let rt_token = self
                     .rt_repo
-                    .gen_refresh_token_base64(now, self.auth_cfg.refresh_ttl as i64)
+                    .gen_refresh_token_base64(now, self.auth_cfg.refresh_ttl )
                     .await
                     .map_err(|e| {
                         error!(error=%e,"gen_refresh_token_base64 fail");
@@ -124,7 +124,7 @@ impl AuthUserCase for AuthService {
                     })?;
                 let (at_token, at_exp) = self
                     .jwt_repo
-                    .encoder(&session_record, self.auth_cfg.access_ttl as i64)
+                    .encoder(&session_record, self.auth_cfg.access_ttl ,now)
                     .await
                     .map_err(|e| {
                         error!(error=%e,"jwt encode fail ");
@@ -303,9 +303,10 @@ impl AuthUserCase for AuthService {
                     return Err(AuthUserCaseError::PolicyVersionMismatch);
                 }
                 // gen new at 
+                let now =self.time_repo.now().await;
                 let (new_at, new_at_exp) = self
                     .jwt_repo
-                    .encoder(&session_record, self.auth_cfg.access_ttl as i64)
+                    .encoder(&session_record, self.auth_cfg.access_ttl ,now)
                     .await
                     .map_err(|e| {
                         error!(error=%e,"encoder fail");

@@ -1,19 +1,72 @@
 use axum::{Json, http::StatusCode};
-use serde_json::{Value, json};
-use use_case::{AuthError, ServiceError};
+use model::auth_model::AuthFormatError;
+use serde_json::json;
+use use_case::AuthUserCaseError;
 
-pub fn to_http(err: ServiceError) -> (StatusCode, Json<Value>) {
-    match err {
-        ServiceError::NotFond => (StatusCode::NOT_FOUND, Json(json!({"error":"not found"}))),
-        ServiceError::Db(msg) => (StatusCode::BAD_REQUEST, Json(json!({"error":msg}))),
+pub trait ErrorToHttp {
+    fn to_http(&self) -> (StatusCode, Json<serde_json::Value>);
+}
+impl ErrorToHttp for AuthFormatError {
+    fn to_http(&self) -> (StatusCode, Json<serde_json::Value>) {
+        match self {
+            AuthFormatError::EmailError => (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "error": "bad request" })),
+            ),
+            AuthFormatError::UsernameError => (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "error": "bad request" })),
+            ),
+        }
     }
 }
-pub fn auth_http(err: AuthError) -> (StatusCode, Json<Value>) {
-    match err {
-        AuthError::Invalid => (StatusCode::BAD_REQUEST, Json(json!({"error":"invalid"}))),
-        AuthError::Db(msg) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"error":msg})),
-        ),
+
+impl ErrorToHttp for AuthUserCaseError {
+    fn to_http(&self) -> (StatusCode, Json<serde_json::Value>) {
+        use AuthUserCaseError::*;
+
+        match self {
+            BadRequet => (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "error": "bad request" })),
+            ),
+
+            Authentication => (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "error": "authentication failed" })),
+            ),
+
+            RefreshExpired => (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "error": "refresh token expired" })),
+            ),
+
+            SessionNotFond => (
+                StatusCode::NOT_FOUND,
+                Json(json!({ "error": "session not found" })),
+            ),
+
+            PolicyVersionMismatch => (
+                StatusCode::CONFLICT,
+                Json(json!({ "error": "policy version mismatch" })),
+            ),
+
+            Corrupted => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": "corrupted data" })),
+            ),
+
+            AuthRepoFail(msg) | HashingFail(msg) | JwtRepofail(msg) | ModelFail(msg)
+            | DbFail(msg) | RefechFail(msg) | PolicyRepoError(msg) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": msg })),
+            ),
+
+            // เผื่อ case อื่น ๆ ในอนาคต
+            _ => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": "unknown error" })),
+            ),
+        }
     }
 }

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use model::{
     jwt::TokenResponse,
-    users::{AcconutStatus, Role},
+    users::{AccountStatus, Role},
 };
 use thiserror::Error;
 use uuid::Uuid;
@@ -13,12 +13,12 @@ pub trait MasterUseCase: Send + Sync {
         order: TokenResponse,
         user_id: Uuid,
         role: Role,
-        status: AcconutStatus,
+        status: AccountStatus,
     ) -> Result<MasterRespon, MasterUseCaseError>;
 }
 #[derive(Debug)]
 pub enum MasterRespon {
-    Update { new_policy_ver: i32 },
+    Update { new_policy_ver: u32 },
     Noop,
 }
 

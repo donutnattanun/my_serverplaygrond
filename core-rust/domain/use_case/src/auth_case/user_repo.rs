@@ -1,8 +1,9 @@
 use async_trait::async_trait;
 use model::{
     auth_model::PasswordHash,
-    users::{AcconutStatus, Role, Users},
+    users::{AccountStatus, Role, Users},
 };
+use sqlx::error;
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -26,12 +27,20 @@ pub trait UserRepo: Send + Sync {
     async fn update_user_status_role(
         &self,
         user_id: Uuid,
-        user_status: AcconutStatus,
+        user_status: AccountStatus,
         user_role: Role,
     ) -> Result<(), UserRepoError>;
 }
 #[derive(Debug, Error)]
 pub enum UserRepoError {
-    #[error("Engin error")]
+    #[error("Engin error :{0}")]
     EnginError(String),
+    #[error("Format error :{0}")]
+    FormatError(String),
+    #[error("Notfound")]
+    NotFound,
+    #[error("INSERT Fail")]
+    INSERTFail,
+    #[error("DuplicateKey : {0}")]
+    DuplicateKey(String),
 }

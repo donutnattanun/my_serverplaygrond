@@ -1,12 +1,12 @@
 use std::{clone, sync::Arc};
 
-use crate::auth_service::AuthService;
+use crate::auth_servicce::auth_service::AuthService;
 use async_trait::async_trait;
 use model::{
     auth_model::{PasswordHash, PasswordPlain, UserLogin, UserSingup},
     jwt::{AuthConfig, Claims, SessionRecordBuild},
     jwt_key_model::jwt::{SessionRecord, TokenResponse},
-    users::{AcconutStatus, Role, Users},
+    users::{AccountStatus, Role, Users},
     users_model::users,
 };
 use tokio::sync::RwLock;
@@ -45,7 +45,7 @@ impl UserRepo for FakeUserRepo {
             username: username.to_string(),
             email: format!("{username}@example.com"),
             role: Role::User,
-            status: AcconutStatus::Active,
+            status: AccountStatus::Active,
         };
         Ok(users)
     }
@@ -89,7 +89,7 @@ impl UserRepo for FakeUserRepo {
     async fn update_user_status_role(
         &self,
         user_id: Uuid,
-        user_status: AcconutStatus,
+        user_status: AccountStatus,
         user_role: Role,
     ) -> Result<(), UserRepoError> {
         Ok(())
@@ -114,7 +114,7 @@ impl HashRepo for FakeHashRepo {
     }
     async fn hash_rt_hmac_sha256_base64(
         &self,
-        rt_plain_base64: &String,
+        rt_plain_base64: &str,
     ) -> Result<String, use_case::HasherError> {
         Ok(format!("hmac{rt_plain_base64}"))
     }
@@ -128,8 +128,8 @@ impl HashRepo for FakeHashRepo {
     }
     async fn varify_rt_hmac_sha256_base64(
         &self,
-        rt_plain_base64: &String,
-        rt_hash_bash64: &String,
+        rt_plain_base64: &str,
+        rt_hash_bash64: &str,
     ) -> Result<VerifyStatus, use_case::HasherError> {
         Ok(VerifyStatus::Pass)
     }
@@ -156,7 +156,7 @@ impl AuthRepo for FakeAuthRepo {
             let sessionrecord_ok = SessionRecordBuild::new(
                 Uuid::new_v4(),
                 Role::User,
-                AcconutStatus::Active,
+                AccountStatus::Active,
                 &fake_rt_hash,
                 1_700_000_999,
                 1_700_000_000,
@@ -175,7 +175,7 @@ impl AuthRepo for FakeAuthRepo {
             let sessionrecord_old_policy = SessionRecordBuild::new(
                 Uuid::new_v4(),
                 Role::User,
-                AcconutStatus::Active,
+                AccountStatus::Active,
                 &fake_rt_hash,
                 1_700_000_999,
                 1_700_000_000,
@@ -194,7 +194,7 @@ impl AuthRepo for FakeAuthRepo {
             let sessionrecord_old_policy = SessionRecordBuild::new(
                 Uuid::new_v4(),
                 Role::User,
-                AcconutStatus::Active,
+                AccountStatus::Active,
                 &fake_rt_hash,
                 1_600_000_999,
                 1_700_000_000,
@@ -213,7 +213,7 @@ impl AuthRepo for FakeAuthRepo {
             let sessionrecord_master_ok = SessionRecordBuild::new(
                 Uuid::new_v4(),
                 Role::Master,
-                AcconutStatus::Active,
+                AccountStatus::Active,
                 &fake_rt_hash,
                 1_700_000_999,
                 1_700_000_000,
@@ -254,10 +254,10 @@ impl RefreshRepo for FakeRefreshRepo {
     async fn gen_refresh_token_base64(
         &self,
         now: i64,
-        rt_ttl: i64,
+        rt_ttl: u32,
     ) -> Result<use_case::RefreshToken, use_case::RefreshRepoError> {
         let token_fake = "RT_FAKE_TOKEN".to_string();
-        let fake_exp = now + rt_ttl;
+        let fake_exp = now + rt_ttl as i64;
         let token = RefreshToken::new(token_fake, fake_exp);
         Ok(token)
     }
@@ -270,9 +270,10 @@ impl JwtRepo for FakeJwtRepo {
     async fn encoder(
         &self,
         session: &SessionRecord,
-        at_ttl: i64,
-    ) -> Result<(String, i64), use_case::JwtRepoError> {
-        Ok(("AT_FAKE.JWT.TOKEN".to_string(), at_ttl))
+        at_ttl: u32,
+        now: i64,
+    ) -> Result<(String, i64), JwtRepoError> {
+        Ok(("AT_FAKE.JWT.TOKEN".to_string(), { now + at_ttl as i64 }))
     }
     async fn decoder(&self, token: &str) -> Result<Claims, use_case::JwtRepoError> {
         //test token is "AT_FAKE.JWT.TOKEN"
@@ -330,10 +331,10 @@ impl JwtRepo for FakeJwtRepo {
 }
 #[derive(Clone)]
 struct FakePolicyMasterRepo {
-    pub fake_policy_ver: Arc<RwLock<i32>>,
+    pub fake_policy_ver: Arc<RwLock<u32>>,
 }
 impl FakePolicyMasterRepo {
-    pub fn new(fack_ver: i32) -> Self {
+    pub fn new(fack_ver: u32) -> Self {
         Self {
             fake_policy_ver: Arc::new(RwLock::new(fack_ver)),
         }
@@ -341,11 +342,11 @@ impl FakePolicyMasterRepo {
 }
 #[async_trait]
 impl PolicyRepo for FakePolicyMasterRepo {
-    async fn get_policy_version(&self) -> Result<i32, use_case::PolicyRepoError> {
+    async fn get_policy_version(&self) -> Result<u32, PolicyRepoError> {
         let res = self.fake_policy_ver.read().await;
         Ok(*res)
     }
-    async fn bump_policy_version(&self) -> Result<i32, use_case::PolicyRepoError> {
+    async fn bump_policy_version(&self) -> Result<u32, use_case::PolicyRepoError> {
         let mut ver = self.fake_policy_ver.write().await;
         *ver += 1;
         Ok(*ver)
@@ -414,14 +415,14 @@ mod tests {
         token: TokenResponse,
         user_id: Uuid,
         role: Role,
-        status: AcconutStatus,
+        status: AccountStatus,
     }
     fn make_order_master_ok(token: TokenResponse) -> OrderMaster {
         OrderMaster {
             token,
             user_id: Uuid::new_v4(),
             role: Role::User,
-            status: AcconutStatus::Active,
+            status: AccountStatus::Active,
         }
     }
     fn make_token_notfond() -> TokenResponse {

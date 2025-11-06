@@ -137,7 +137,7 @@ mod tests {
         let session = SessionRecordBuild::new(
             user_id,
             model::users::Role::User,
-            model::users::AcconutStatus::Active,
+            model::users::AccountStatus::Active,
             &rt_hash,
             now + auth_cfg.refresh_ttl as i64,
             now,

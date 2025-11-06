@@ -1,79 +1,180 @@
-use std::sync::Arc;
-
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::State,
     http::StatusCode,
     routing::{get, post},
 };
-use use_case::{UserUseCase, Valid};
+use deadpool_redis::redis::AsyncCommands;
+use model::{
+    auth_model::{AuthFormatError, UserLogin, UserSingup},
+    jwt::TokenResponse,
+};
+use std::sync::Arc;
+use tracing::{error, info, warn};
+use use_case::{AuthUserCase, AuthUserCaseError};
 
-use crate::{UserLoginReq, UserResp, UserSingupReq, err_map::auth_http, to_http};
+use crate::{
+    dto::{UserLoginReq, UserSingupReq},
+    err_map::ErrorToHttp,
+};
 use http::{HeaderValue, Method};
 use tower_http::cors::CorsLayer;
 
-type AppState = Arc<dyn UserUseCase + Send + Sync + 'static>;
+#[derive(Clone)]
+pub struct SharedState {
+    pub svc: Arc<dyn AuthUserCase + Send + Sync + 'static>,
+    pub pg_pool: PgPool,
+    pub redis_pool: deadpool_redis::Pool,
+}
 
-pub fn routes(svc: AppState) -> Router {
+type AppState = SharedState;
+
+pub fn routes(state: AppState) -> Router {
     let cors = CorsLayer::new()
         .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
         .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
         .allow_headers([http::header::CONTENT_TYPE, http::header::AUTHORIZATION])
         .allow_credentials(true);
     Router::new()
-        .route("/users", get(list_users))
-        .route("/user/{id}", get(get_user))
-        .route("/singup", post(newuser))
-        .route("/user/login", post(login))
+        .route("/auth/login", post(login))
+        .route("/auth/singup", post(singup))
+        .route("/auth/logout", post(logout))
+        .route("/auth/refresh", post(refresh))
         .route("/check", get(check))
         .layer(cors)
-        .with_state(svc)
+        .with_state(state)
 }
-#[axum::debug_handler]
-pub async fn list_users(
-    State(svc): State<AppState>,
-) -> Result<Json<Vec<UserResp>>, (StatusCode, Json<serde_json::Value>)> {
-    let users = svc.get_users().await.map_err(to_http)?;
-    let resp = users.into_iter().map(Into::into).collect();
-    Ok(Json(resp))
-}
-#[axum::debug_handler]
 
-pub async fn get_user(
-    State(svc): State<AppState>,
-    Path(id): Path<String>,
-) -> Result<Json<UserResp>, (StatusCode, Json<serde_json::Value>)> {
-    let row = svc.get_user(id).await.map_err(to_http)?;
-    Ok(Json(row.into()))
-}
 #[axum::debug_handler]
-
-pub async fn newuser(
-    State(svc): State<AppState>,
-    Json(raw): Json<UserSingupReq>,
-) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
-    let valid_singup_order = raw.try_into().map_err(auth_http)?;
-    svc.create_user(valid_singup_order).await.map_err(to_http)?;
-    Ok((
-        StatusCode::CREATED,
-        Json(serde_json::json!({"status":"Succassfull"})),
-    ))
-}
-#[axum::debug_handler]
-
 pub async fn login(
-    State(svc): State<AppState>,
+    State(state): State<AppState>,
     Json(raw): Json<UserLoginReq>,
 ) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
-    let valid_login_order = raw.try_into().map_err(auth_http)?;
-    svc.user_login(valid_login_order).await.map_err(auth_http)?;
+    let order: UserLogin = raw.try_into().map_err(|e: AuthFormatError| {
+        warn!(error=%e,"Format error :");
+        e.to_http()
+    })?;
+    let token = state
+        .svc
+        .login(order)
+        .await
+        .map_err(|e: AuthUserCaseError| {
+            warn!(error=%e,"App error : ");
+            e.to_http()
+        })?;
     Ok((
         StatusCode::OK,
-        Json(serde_json::json!({"status":"login Succsssfull",
-                                "jwt":"1234"})),
+        Json(serde_json::json!({
+        "status": "success",
+        "message": "Login successful",
+        "data": {
+            "access_token": token.access_token,
+            "refresh_token": token.refresh_token,
+            "expires_in": token.expires_in,
+            "token_type": token.token_type,
+        }
+
+        })),
+    ))
+}
+pub async fn singup(
+    State(state): State<AppState>,
+    Json(raw): Json<UserSingupReq>,
+) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
+    let order: UserSingup = raw.try_into().map_err(|e: AuthFormatError| {
+        warn!(error=%e,"Format error :");
+        e.to_http()
+    })?;
+    state
+        .svc
+        .singup(order)
+        .await
+        .map_err(|e: AuthUserCaseError| {
+            warn!(error=%e,"App error : ");
+            e.to_http()
+        })?;
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({
+        "status": "success",
+        "message": "singup successful",
+        })),
+    ))
+}
+pub async fn logout(
+    State(state): State<AppState>,
+    Json(raw): Json<TokenResponse>,
+) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
+    state
+        .svc
+        .logout(raw)
+        .await
+        .map_err(|e: AuthUserCaseError| {
+            warn!(error=%e,"App error : ");
+            e.to_http()
+        })?;
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({
+        "status": "success",
+        "message": "logout successful",
+        })),
+    ))
+}
+pub async fn refresh(
+    State(state): State<AppState>,
+    Json(raw): Json<TokenResponse>,
+) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
+    state
+        .svc
+        .refresh_token(raw)
+        .await
+        .map_err(|e: AuthUserCaseError| {
+            warn!(error=%e,"App error : ");
+            e.to_http()
+        })?;
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({
+        "status": "success",
+        "message": "refresh successful",
+        })),
     ))
 }
 
-pub async fn check() -> (StatusCode, &'static str) {
-    (StatusCode::OK, "am ok hell ya")
+//TODO make tarit app
+//now let manual
+use serde_json::json;
+use sqlx::PgPool;
+
+pub async fn check(State(state): State<AppState>) -> (StatusCode, Json<serde_json::Value>) {
+    let pool = state.pg_pool;
+    let db_ok = sqlx::query("SELECT 1").fetch_one(&pool).await.is_ok();
+    let redis_ok = {
+        if let Ok(mut conn) = state.redis_pool.get().await {
+            conn.ping::<String>().await.is_ok()
+        } else {
+            false
+        }
+    };
+    let ok = db_ok && redis_ok;
+
+    let status = if ok {
+        StatusCode::OK
+    } else {
+        StatusCode::SERVICE_UNAVAILABLE
+    };
+    let time = chrono::Utc::now().to_string();
+
+    (
+        status,
+        Json(json!({
+            "status": if ok { "ok" } else { "degraded" },
+            "services": {
+                "database": db_ok,
+                "redis": redis_ok,
+            },
+            "timestamp": time
+        })),
+    )
 }

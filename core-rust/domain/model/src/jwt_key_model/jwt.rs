@@ -1,7 +1,7 @@
-use crate::users_model::{AcconutStatus, Role};
+use crate::users_model::{AccountStatus, Role};
 use uuid::Uuid;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TokenResponse {
     pub access_token: String,  // at_xxx (opaque)
     pub refresh_token: String, // rt_xxx (opaque)
@@ -50,7 +50,7 @@ pub struct SessionRecord {
     pub session_id: String, // sess_xxx (ช่วย logout per device)
     pub user_id: Uuid,
     pub role: Role,
-    pub status: AcconutStatus,
+    pub status: AccountStatus,
     pub created_at: i64,        // epoch
     pub expires_at: i64,        // epoch ของ access/refresh (แล้วแต่ key)
     pub rt_hash: String,        // for check refresh key
@@ -63,7 +63,7 @@ pub struct SessionRecord {
 pub struct SessionRecordBuild {
     user_id: Uuid,
     role: Role,
-    status: AcconutStatus,
+    status: AccountStatus,
     rt_hash: String,
     rt_exp: i64,
     device: Option<String>,
@@ -76,7 +76,7 @@ impl SessionRecordBuild {
     pub fn new(
         user_id: Uuid,
         role: Role,
-        status: AcconutStatus,
+        status: AccountStatus,
         rt_hash: &String,
         rt_exp: i64,
         now: i64,

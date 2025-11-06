@@ -1,6 +1,6 @@
 use thiserror::Error;
 use zeroize::Zeroizing;
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PasswordHash {
     pub phc: String,
 }

@@ -111,7 +111,7 @@ mod tests {
         let session = SessionRecordBuild::new(
             user_id_test,
             model::users::Role::User,
-            model::users::AcconutStatus::Active,
+            model::users::AccountStatus::Active,
             &rt_hash,
             refresh_token.token_exp,
             now,
