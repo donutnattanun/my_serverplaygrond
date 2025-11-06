@@ -267,12 +267,15 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "deadpool-redis",
+ "hasher",
  "model",
+ "refresh_token",
  "serde",
  "serde_json",
  "timesystem",
  "tokio",
  "use_case",
+ "uuid",
 ]
 
 [[package]]

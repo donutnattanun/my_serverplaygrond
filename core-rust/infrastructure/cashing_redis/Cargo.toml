@@ -14,4 +14,8 @@ deadpool-redis = { version = "0.22.0", features = ["rt_tokio_1"] }
 serde.workspace = true
 model = { version = "0.1.0", path = "../../domain/model" }
 serde_json = "1.0.145"
+hasher = { version = "0.1.0", path = "../../interface/hasher" }
+[dev-dependencies]
 timesystem = { version = "0.1.0", path = "../../interface/timesystem" }
+uuid.workspace = true
+refresh_token = { version = "0.1.0", path = "../../interface/refresh_token" }

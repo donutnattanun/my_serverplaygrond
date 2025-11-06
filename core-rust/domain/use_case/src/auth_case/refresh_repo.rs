@@ -6,7 +6,7 @@ pub trait RefreshRepo: Send + Sync {
     async fn gen_refresh_token_base64(
         &self,
         now: i64,
-        rt_ttl: i64,
+        rt_ttl: u32,
     ) -> Result<RefreshToken, RefreshRepoError>;
 }
 

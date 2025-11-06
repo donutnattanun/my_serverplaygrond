@@ -45,7 +45,7 @@ impl Claims {
 // ========== session For Redis ========== \\
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct SessionRecord {
     pub session_id: String, // sess_xxx (ช่วย logout per device)
     pub user_id: Uuid,
