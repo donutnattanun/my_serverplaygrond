@@ -45,7 +45,6 @@ pub fn routes(state: AppState) -> Router {
         .with_state(state)
 }
 
-#[axum::debug_handler]
 pub async fn login(
     State(state): State<AppState>,
     Json(raw): Json<UserLoginReq>,
