@@ -1,7 +1,7 @@
 use crate::users_model::{AccountStatus, Role};
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TokenResponse {
     pub access_token: String,  // at_xxx (opaque)
     pub refresh_token: String, // rt_xxx (opaque)

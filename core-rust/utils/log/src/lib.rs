@@ -1,4 +1,4 @@
-use tracing_subscriber::{filter, fmt, prelude::*, EnvFilter};
+use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 #[derive(thiserror::Error, Debug)]
 pub enum LogErr {
     #[error("invalid LOG_FORMAT{0}")]
@@ -12,19 +12,18 @@ pub fn init_tracing() -> Result<(), LogErr> {
         Err(e) => {
             println!("warning::LOG_FORMAT:NOTFOND use degault loging error = {e:?}");
             false
-            //return Err(LogErr::InvalidFormat(e.to_string()));
         }
         Ok(_) => false,
     };
-    // let filter = EnvFilter::try_from_default_env()
-    //    .unwrap_or_else();
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
     if fmt_is_json {
         tracing_subscriber::registry()
-            //       .with(filter)
+            .with(filter)
             .with(fmt::layer().json())
             .init();
     } else {
         tracing_subscriber::registry()
+            .with(filter)
             .with(fmt::layer().compact())
             .init();
     }

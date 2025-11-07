@@ -3,7 +3,7 @@ use std::env;
 use tracing::{error, info, warn};
 
 #[derive(Debug)]
-pub struct Config {
+pub struct EnvConfig {
     pub host: String,
     pub port: String,
     pub database_url: String,
@@ -14,11 +14,11 @@ pub struct Config {
 #[derive(thiserror::Error, Debug)]
 pub enum LoadEnvError {
     #[error("Env NotFond")]
-    NotFond,
+    NotFond(String),
     #[error("Env var error")]
     Varfail,
 }
-pub fn load() -> Result<Config, LoadEnvError> {
+pub fn load_env() -> Result<EnvConfig, LoadEnvError> {
     match dotenv() {
         Ok(path) => {
             info!("dotenv load success use env at {:?}", path);
@@ -26,11 +26,11 @@ pub fn load() -> Result<Config, LoadEnvError> {
         }
         Err(e) => {
             warn!("fallback try_env form os error::{:?}", e);
-            var_env()
+            Err(LoadEnvError::NotFond(e.to_string()))
         }
     }
 }
-pub fn var_env() -> Result<Config, LoadEnvError> {
+pub fn var_env() -> Result<EnvConfig, LoadEnvError> {
     let env_host = env::var("API_HOST").map_err(|e| {
         error!(error=%e,"load_env:load_env error std::var");
         LoadEnvError::Varfail
@@ -62,7 +62,7 @@ pub fn var_env() -> Result<Config, LoadEnvError> {
         LoadEnvError::Varfail
     })?;
     info!(env_jwt_kid=%env_jwt_kid,"load_env:load_env sucsess");
-    Ok(Config {
+    Ok(EnvConfig {
         host: env_host,
         port: env_port,
         database_url: env_database_url,

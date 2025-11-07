@@ -124,7 +124,7 @@ pub async fn refresh(
     State(state): State<AppState>,
     Json(raw): Json<TokenResponse>,
 ) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
-    state
+    let token = state
         .svc
         .refresh_token(raw)
         .await
@@ -137,6 +137,12 @@ pub async fn refresh(
         Json(serde_json::json!({
         "status": "success",
         "message": "refresh successful",
+        "data": {
+            "access_token": token.access_token,
+            "refresh_token": token.refresh_token,
+            "expires_in": token.expires_in,
+            "token_type": token.token_type,
+        }
         })),
     ))
 }

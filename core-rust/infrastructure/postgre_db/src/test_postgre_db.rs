@@ -2,7 +2,7 @@
 mod tests {
     use crate::postgre_service::*;
     use model::auth_model::PasswordHash;
-    use model::users::{AccountStatus, Role, Users};
+    use model::users::{AccountStatus, Role};
     use sqlx::PgPool;
     use use_case::UserRepo;
     use uuid::Uuid;
