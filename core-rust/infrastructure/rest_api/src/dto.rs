@@ -1,5 +1,10 @@
-use model::auth_model::{AuthFormatError, PasswordPlain, UserLogin, UserSingup};
+use model::{
+    auth_model::{AuthFormatError, PasswordPlain, UserLogin, UserSingup},
+    jwt::TokenResponse,
+    users::{AccountStatus, Role},
+};
 use serde::Deserialize;
+use uuid::Uuid;
 #[derive(Debug, Deserialize)]
 pub struct UserLoginReq {
     pub username: String,
@@ -28,4 +33,11 @@ impl TryFrom<UserLoginReq> for UserLogin {
         let res = UserLogin::new(r.username, php)?;
         Ok(res)
     }
+}
+#[derive(Debug, Deserialize)]
+pub struct MasterUpdateReq {
+    pub token: TokenResponse,
+    pub user_id: Uuid,
+    pub user_role: Role,
+    pub user_status: AccountStatus,
 }

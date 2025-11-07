@@ -11,3 +11,4 @@ sqlx.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 uuid.workspace = true
+serde = { version = "1.0", features = ["derive"] }

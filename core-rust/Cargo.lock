@@ -3014,6 +3014,7 @@ dependencies = [
  "async-trait",
  "axum",
  "model",
+ "serde",
  "sqlx",
  "thiserror",
  "tokio",

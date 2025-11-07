@@ -3,6 +3,7 @@ use model::{
     jwt::TokenResponse,
     users::{AccountStatus, Role},
 };
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -16,7 +17,7 @@ pub trait MasterUseCase: Send + Sync {
         status: AccountStatus,
     ) -> Result<MasterRespon, MasterUseCaseError>;
 }
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum MasterRespon {
     Update { new_policy_ver: u32 },
     Noop,

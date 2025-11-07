@@ -23,7 +23,7 @@ mod test {
         auth_model::{UserLogin, UserSingup},
         jwt::TokenResponse,
     };
-    use use_case::{AuthUserCase, AuthUserCaseError, LogoutResult}; // เปลี่ยนเป็น path จริง
+    use use_case::{AuthUserCase, AuthUserCaseError, LogoutResult, MasterUseCase}; // เปลี่ยนเป็น path จริง
 
     // ---------- Dummy Auth svc (ไม่ได้ใช้ใน /check แตะ state ให้ครบ) ----------
     fn make_token_ok() -> TokenResponse {
@@ -40,6 +40,19 @@ mod test {
             refresh_token: "rt_dummy_rh".into(),
             expires_in: 900,
             token_type: "Bearer".into(),
+        }
+    }
+    struct DummyMasterSvc;
+    #[async_trait]
+    impl MasterUseCase for DummyMasterSvc {
+        async fn update_user_status(
+            &self,
+            order: TokenResponse,
+            user_id: uuid::Uuid,
+            role: model::users::Role,
+            status: model::users::AccountStatus,
+        ) -> Result<use_case::MasterRespon, use_case::MasterUseCaseError> {
+            unimplemented!()
         }
     }
 
@@ -170,6 +183,8 @@ mod test {
             svc: Arc::new(DummyAuthSvc),
             pg_pool: pg_pool.clone(),
             redis_pool: redis_pool.clone(),
+            //TODO test master use case
+            svc_master: Arc::new(DummyMasterSvc),
         };
 
         // ---------- app ----------

@@ -11,10 +11,10 @@ use model::{
 };
 use std::sync::Arc;
 use tracing::{error, info, warn};
-use use_case::{AuthUserCase, AuthUserCaseError};
+use use_case::{AuthUserCase, AuthUserCaseError, MasterUseCase};
 
 use crate::{
-    dto::{UserLoginReq, UserSingupReq},
+    dto::{MasterUpdateReq, UserLoginReq, UserSingupReq},
     err_map::ErrorToHttp,
 };
 use http::{HeaderValue, Method};
@@ -23,6 +23,7 @@ use tower_http::cors::CorsLayer;
 #[derive(Clone)]
 pub struct SharedState {
     pub svc: Arc<dyn AuthUserCase + Send + Sync + 'static>,
+    pub svc_master: Arc<dyn MasterUseCase + Send + Sync + 'static>,
     pub pg_pool: PgPool,
     pub redis_pool: deadpool_redis::Pool,
 }
@@ -41,8 +42,29 @@ pub fn routes(state: AppState) -> Router {
         .route("/auth/logout", post(logout))
         .route("/auth/refresh", post(refresh))
         .route("/check", get(check))
+        .route("/auth/master/update", post(master_update))
         .layer(cors)
         .with_state(state)
+}
+pub async fn master_update(
+    State(state): State<AppState>,
+    Json(raw): Json<MasterUpdateReq>,
+) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
+    let res = state
+        .svc_master
+        .update_user_status(raw.token, raw.user_id, raw.user_role, raw.user_status)
+        .await
+        .map_err(|e| e.to_http())?;
+    Ok((
+        StatusCode::OK,
+        Json(serde_json::json!({
+        "status": "success",
+        "message": "Update successful",
+        "data": {
+                "master cord":res
+            }
+        })),
+    ))
 }
 
 pub async fn login(
@@ -72,7 +94,6 @@ pub async fn login(
             "expires_in": token.expires_in,
             "token_type": token.token_type,
         }
-
         })),
     ))
 }
@@ -143,6 +164,7 @@ pub async fn refresh(
             "expires_in": token.expires_in,
             "token_type": token.token_type,
         }
+
         })),
     ))
 }
