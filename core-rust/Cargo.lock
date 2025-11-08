@@ -53,13 +53,20 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "cashing_redis",
+ "hasher",
  "http",
- "load_env",
+ "jwt_token",
+ "load",
  "log 0.1.0",
+ "model",
+ "policy_ver",
  "postgre_db",
+ "refresh_token",
  "rest_api",
  "service",
  "sqlx",
+ "timesystem",
  "tokio",
  "tower-http",
  "tracing",
@@ -869,6 +876,7 @@ dependencies = [
  "async-trait",
  "base64",
  "hmac",
+ "load",
  "model",
  "rand 0.9.2",
  "rand_core 0.6.4",
@@ -1248,9 +1256,9 @@ dependencies = [
 
 [[package]]
 name = "jsonwebtoken"
-version = "10.1.0"
+version = "10.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d119c6924272d16f0ab9ce41f7aa0bfef9340c00b0bb7ca3dd3b263d4a9150b"
+checksum = "c76e1c7d7df3e34443b3621b459b066a7b79644f059fc8b2db7070c825fd417e"
 dependencies = [
  "base64",
  "ed25519-dalek",
@@ -1340,10 +1348,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "241eaef5fd12c88705a01fc1066c48c4b36e0dd4377dcdc7ec3942cea7a69956"
 
 [[package]]
-name = "load_env"
+name = "load"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "dotenvy",
+ "jsonwebtoken",
  "thiserror",
  "tracing",
 ]

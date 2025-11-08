@@ -16,7 +16,7 @@ pub struct UserSingup {
 impl UserLogin {
     pub fn new(username: String, password_plain: PasswordPlain) -> Result<Self, AuthFormatError> {
         if username.is_empty() || username.len() < 4 {
-            return Err(AuthFormatError::UsernameError);
+            return Err(AuthFormatError::UsernameError(username.to_string()));
         }
         Ok(Self {
             username,
@@ -32,10 +32,10 @@ impl UserSingup {
         password_plain: PasswordPlain,
     ) -> Result<Self, AuthFormatError> {
         if username.is_empty() || username.len() < 4 {
-            return Err(AuthFormatError::UsernameError);
+            return Err(AuthFormatError::UsernameError(username.to_string()));
         }
-        if email.is_empty() || email.contains("@") {
-            return Err(AuthFormatError::EmailError);
+        if email.is_empty() || !email.contains("@") {
+            return Err(AuthFormatError::EmailError(email.to_string()));
         }
         Ok(Self {
             username,
@@ -46,8 +46,8 @@ impl UserSingup {
 }
 #[derive(Debug, Error)]
 pub enum AuthFormatError {
-    #[error("email  Format error")]
-    EmailError,
-    #[error("username Format error")]
-    UsernameError,
+    #[error("email  Format error:{0}")]
+    EmailError(String),
+    #[error("username Format error:{0}")]
+    UsernameError(String),
 }

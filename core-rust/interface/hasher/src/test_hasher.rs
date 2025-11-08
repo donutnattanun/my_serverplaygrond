@@ -52,4 +52,32 @@ mod tests {
             VerifyStatus::Fail
         ));
     }
+    #[tokio::test]
+    async fn refresh_token_hmac_base64_secret_from_env() {
+        println!("Debug");
+        let secret = load::load_hmac_key("../../security/keys/dev_base64_key.text").unwrap();
+        println!("{:?}", secret);
+        let svc = HashService::new_default(secret);
+        let now = TimeSystemService.now().await;
+        let rt_ttl = 60;
+        let token_from_gen = RefreshTokenService
+            .gen_refresh_token_base64(now, rt_ttl)
+            .await
+            .expect("refresh_token_hmac_base64 fail");
+        let rt_plain_b64 = &token_from_gen.token_plain; // สมมติ plain token ที่เป็น base64url แล้ว
+        let tag = svc.hash_rt_hmac_sha256_base64(rt_plain_b64).await.unwrap();
+
+        assert!(matches!(
+            svc.varify_rt_hmac_sha256_base64(rt_plain_b64, &tag)
+                .await
+                .unwrap(),
+            VerifyStatus::Pass
+        ));
+        assert!(matches!(
+            svc.varify_rt_hmac_sha256_base64("tampered", &tag)
+                .await
+                .unwrap(),
+            VerifyStatus::Fail
+        ));
+    }
 }

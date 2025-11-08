@@ -1,0 +1,14 @@
+[package]
+name = "load"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+base64 = "0.22.1"
+dotenvy.workspace = true
+jsonwebtoken = { version = "10.1", default-features = false, features = [
+  "rust_crypto",
+  "use_pem",
+] }
+thiserror.workspace = true
+tracing.workspace = true

@@ -10,7 +10,7 @@ pub fn init_tracing() -> Result<(), LogErr> {
         Ok(s) if s.eq_ignore_ascii_case("json") => true,
         Ok(s) if s.eq_ignore_ascii_case("default") || s.is_empty() => false,
         Err(e) => {
-            println!("warning::LOG_FORMAT:NOTFOND use degault loging error = {e:?}");
+            println!("warning:LOG_FORMAT:NOTFOND use default loging error = {e:?}");
             false
         }
         Ok(_) => false,

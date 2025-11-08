@@ -1,35 +1,44 @@
-# ------------------------
-# Stage 1: builder
-# ------------------------
-FROM rust:1.88 AS builder
 
+# Stage 1: Build
+FROM rust:1.91-slim  AS builder
 WORKDIR /app
-COPY . .
-RUN echo "=== Check edition in container ===" && \
-    grep -R "edition" --include Cargo.toml . || true && \
-    grep -R "cargo-features" --include Cargo.toml . || true
-RUN cat /app/Cargo.toml
-# compile release binary
-RUN cargo build --release
 
-# ------------------------
-# Stage 2: runtime (slim) ------------------------
-FROM debian:bookworm-slim
+# Enable edition 2024
+ENV RUST_EDITION=2024
 
-# dependencies เช่น openssl, ca-certificates
+# Copy workspace files
+COPY Cargo.toml Cargo.lock ./
+COPY domain domain
+COPY infrastructure infrastructure
+COPY interface interface
+COPY application application
+COPY utils utils
+COPY security security
+COPY migrations migrations
+
+# install sqlx for seed db 
+RUN cargo install sqlx-cli --no-default-features --features postgres,rustls
+# Build with release optimization
+RUN cargo build --release --locked
+
+# Stage 2: Runtime
+FROM ubuntu:24.04
+WORKDIR /app
+
+# install minimal libs (openssl/sqlx)
 RUN apt-get update && apt-get install -y \
-    libssl-dev \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    libssl3 ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-
-# copy binary from builder
+# copy binary
 COPY --from=builder /app/target/release/app_service /usr/local/bin/app_service
+COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/sqlx
 
-# .env ถ้าอยากก็ COPY เข้ามาได้ แต่ส่วนใหญ่ใช้ Docker secrets หรือ env ตอน run
-# COPY .env /app/.env
+# copy env + keys
+COPY .env /app/.env
+COPY security /app/security
+COPY migrations /app/migrations
 
-EXPOSE 3000
-CMD ["app_service"]
+# default entrypoint
+CMD ["/bin/sh","-c","sqlx migrate run && /usr/local/bin/app_service"]
 

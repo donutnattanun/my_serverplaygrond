@@ -6,13 +6,20 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.99"
 axum.workspace = true
+cashing_redis = { version = "0.1.0", path = "../../infrastructure/cashing_redis" }
+hasher = { version = "0.1.0", path = "../../interface/hasher" }
 http.workspace = true
-load_env = { version = "0.1.0", path = "../../utils/load_env" }
+jwt_token = { version = "0.1.0", path = "../../interface/jwt_token" }
+load = { version = "0.1.0", path = "../../utils/load" }
 log = { version = "0.1.0", path = "../../utils/log" }
+model = { version = "0.1.0", path = "../../domain/model" }
+policy_ver = { version = "0.1.0", path = "../../interface/policy_ver" }
 postgre_db = { version = "0.1.0", path = "../../infrastructure/postgre_db" }
+refresh_token = { version = "0.1.0", path = "../../interface/refresh_token" }
 rest_api = { version = "0.1.0", path = "../../infrastructure/rest_api" }
 service = { version = "0.1.0", path = "../../domain/service" }
 sqlx.workspace = true
+timesystem = { version = "0.1.0", path = "../../interface/timesystem" }
 tokio.workspace = true
 tower-http.workspace = true
 tracing.workspace = true

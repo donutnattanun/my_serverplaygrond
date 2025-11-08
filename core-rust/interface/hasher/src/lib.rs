@@ -6,7 +6,6 @@ use argon2::{
         Error as PhcError, PasswordHash as PhcHash, PasswordHasher, PasswordVerifier, SaltString,
     },
 };
-use zeroize::Zeroizing;
 
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use hmac::{Hmac, Mac};
@@ -21,25 +20,21 @@ use use_case::{HashRepo, HasherError, VerifyStatus};
 
 pub struct HashService {
     pub argon2: Argon2<'static>,
-    pub secret: Zeroizing<[u8; 32]>,
+    pub secret: [u8; 32],
 }
 impl HashService {
     pub fn new_default(secret: [u8; 32]) -> Self {
-        let params = Params::new(256 * 1024, 3, 1, None).expect("valid params");
-        // 256 MiB, 3 รอบ, 1 thread
+        let params = Params::new(32 * 1024, 3, 1, None).expect("valid params");
+        // 32 MiB, 3 รอบ, 1 thread
+        // TODO let joun porformant
+        // waining !!!! now default setting set for dwv test
         let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
-        Self {
-            argon2,
-            secret: Zeroizing::new(secret),
-        }
+        Self { argon2, secret }
     }
     pub fn new_with_params(secret: [u8; 32], m_kib: u32, t_cost: u32, p_cost: u32) -> Self {
         let params = Params::new(m_kib, t_cost, p_cost, None).expect("valid params");
         let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
-        Self {
-            argon2,
-            secret: Zeroizing::new(secret),
-        }
+        Self { argon2, secret }
     }
 }
 
@@ -53,7 +48,7 @@ impl HashRepo for HashService {
         let phc = self
             .argon2
             .hash_password(&ps_plain.as_bytes(), &salt)
-            .map_err(|e| HasherError::EnginError(e.to_string()))?;
+            .map_err(|e| HasherError::HashEnginError(e.to_string()))?;
         let res = DomainPhc::from_phc(phc.to_string())
             .map_err(|e| HasherError::FormatError(e.to_string()))?;
         Ok(res)
@@ -64,7 +59,7 @@ impl HashRepo for HashService {
         cadidaie: PasswordPlain,
     ) -> Result<use_case::VerifyStatus, HasherError> {
         let phc_argon_type =
-            PhcHash::new(&phc.phc).map_err(|e| HasherError::EnginError(e.to_string()))?;
+            PhcHash::new(&phc.phc).map_err(|e| HasherError::VerifyError(e.to_string()))?;
         let opt_verify = self.argon2.verify_password(&cadidaie.0, &phc_argon_type);
         match opt_verify {
             Ok(()) => Ok(VerifyStatus::Pass),
@@ -76,7 +71,7 @@ impl HashRepo for HashService {
         &self,
         rt_plain_base64: &str,
     ) -> Result<String, HasherError> {
-        let mut mac = HmacSha256::new_from_slice(&*self.secret)
+        let mut mac = HmacSha256::new_from_slice(&self.secret)
             .map_err(|e| HasherError::EnginError(e.to_string()))?;
         mac.update(rt_plain_base64.as_bytes());
         let tag = mac.finalize().into_bytes();
@@ -89,7 +84,7 @@ impl HashRepo for HashService {
         rt_hash_bash64: &str,
     ) -> Result<use_case::VerifyStatus, HasherError> {
         //calculet new tag
-        let mut mac = HmacSha256::new_from_slice(&*self.secret)
+        let mut mac = HmacSha256::new_from_slice(&self.secret)
             .map_err(|e| HasherError::EnginError(e.to_string()))?;
         mac.update(rt_plain_base64.as_bytes());
         let computed_tag = mac.finalize().into_bytes();

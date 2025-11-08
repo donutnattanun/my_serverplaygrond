@@ -7,6 +7,7 @@ use model::users::Users;
 use sqlx::PgPool;
 use use_case::{UserRepo, UserRepoError};
 
+#[derive(Clone)]
 pub struct SqlxUserRepo {
     pub pool: PgPool,
 }

@@ -1,5 +1,6 @@
 use model::auth_model::{PasswordHash, PasswordPlain};
 use thiserror::Error;
+use tokio::sync::mpsc::error;
 
 #[async_trait::async_trait]
 pub trait HashRepo: Send + Sync {
@@ -29,6 +30,10 @@ pub enum HasherError {
     EnginError(String),
     #[error("format error:{0}")]
     FormatError(String),
+    #[error("HashEngin error:{0}")]
+    HashEnginError(String),
+    #[error{"varify_password error{0}"}]
+    VerifyError(String),
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VerifyStatus {

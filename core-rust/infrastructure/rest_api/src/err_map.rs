@@ -9,11 +9,11 @@ pub trait ErrorToHttp {
 impl ErrorToHttp for AuthFormatError {
     fn to_http(&self) -> (StatusCode, Json<serde_json::Value>) {
         match self {
-            AuthFormatError::EmailError => (
+            AuthFormatError::EmailError(_) => (
                 StatusCode::BAD_REQUEST,
                 Json(json!({ "error": "bad request" })),
             ),
-            AuthFormatError::UsernameError => (
+            AuthFormatError::UsernameError(_) => (
                 StatusCode::BAD_REQUEST,
                 Json(json!({ "error": "bad request" })),
             ),
@@ -38,7 +38,9 @@ impl ErrorToHttp for AuthUserCaseError {
 
             RefreshExpired => (
                 StatusCode::UNAUTHORIZED,
-                Json(json!({ "error": "refresh token expired" })),
+                Json(json!({ "status": "fail",
+                "code": "invalid_token",
+                "message": "The provided token is invalid or expired."})),
             ),
 
             SessionNotFond => (
@@ -48,7 +50,9 @@ impl ErrorToHttp for AuthUserCaseError {
 
             PolicyVersionMismatch => (
                 StatusCode::CONFLICT,
-                Json(json!({ "error": "policy version mismatch" })),
+                Json(json!({ "status": "fail",
+                "code": "policy_version_mismatch",
+                "message": "Your session is no longer valid. Please log in again."})),
             ),
 
             Corrupted => (

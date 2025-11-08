@@ -132,6 +132,7 @@ impl AuthUserCase for AuthService {
                     })?;
                 let token_respon =
                     TokenResponse::new(at_token, &rt_token.token_plain, at_exp as u32);
+        info!(username=%order.username,"Login success");
                 return Ok(token_respon);
             }
             VerifyStatus::Fail => {
@@ -197,6 +198,7 @@ impl AuthUserCase for AuthService {
                 error!(error=%e,"creat_user fail");
                 AuthUserCaseError::DbFail(e.to_string())
             })?;
+        info!(username=%order.username,"singup success");
         Ok(())
     }
     async fn logout(&self, order: TokenResponse) -> Result<LogoutResult, AuthUserCaseError> {
@@ -317,6 +319,7 @@ impl AuthUserCase for AuthService {
                         new_at, 
                         &order.refresh_token, 
                         new_at_exp as u32);
+                info!(sess_id=%&order_claims.jti,"refresh_token :success");
                 Ok(new_token)
             }
             VerifyStatus::Fail => {

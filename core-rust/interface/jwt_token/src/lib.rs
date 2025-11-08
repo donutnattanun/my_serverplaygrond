@@ -18,6 +18,12 @@ impl JwtCfg {
             alg: Algorithm::EdDSA,
         }
     }
+    pub fn new_option(kid: &str) -> Self {
+        Self {
+            kid: Some(kid.to_string()),
+            alg: Algorithm::EdDSA,
+        }
+    }
 }
 
 pub struct JwtService {
