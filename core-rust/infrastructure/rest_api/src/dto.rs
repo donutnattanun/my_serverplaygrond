@@ -41,3 +41,7 @@ pub struct MasterUpdateReq {
     pub user_role: Role,
     pub user_status: AccountStatus,
 }
+#[derive(Debug, Deserialize)]
+pub struct TokenReq {
+    pub token: String,
+}

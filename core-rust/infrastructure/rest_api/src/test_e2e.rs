@@ -71,11 +71,9 @@ mod test {
                 Err(AuthUserCaseError::BadRequet)
             }
         }
-        async fn logout(
-            &self,
-            order: TokenResponse,
-        ) -> Result<use_case::LogoutResult, AuthUserCaseError> {
-            if order == make_token_refresh_res_ok() {
+        async fn logout(&self, order: String) -> Result<LogoutResult, AuthUserCaseError> {
+            let token_raw = make_token_refresh_res_ok();
+            if order == token_raw.access_token {
                 Ok(LogoutResult::SessionTerminated)
             } else {
                 Err(AuthUserCaseError::BadRequet)

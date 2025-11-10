@@ -467,7 +467,7 @@ mod tests {
     async fn logout_success() {
         let svc = make_auth_service();
         let order = make_token_ok();
-        let res = svc.logout(order).await;
+        let res = svc.logout(order.access_token).await;
         assert!(res.is_ok(), "expected Ok(...), got: {:?}", res);
         let out = res.unwrap();
         assert_eq!(out, LogoutResult::SessionTerminated);
@@ -476,7 +476,7 @@ mod tests {
     async fn logout_notfond() {
         let svc = make_auth_service();
         let order = make_token_notfond();
-        let res = svc.logout(order).await;
+        let res = svc.logout(order.access_token).await;
         assert!(res.is_ok(), "expected Ok(...), got: {:?}", res);
         let out = res.unwrap();
         assert_eq!(out, LogoutResult::SessionNotFond);

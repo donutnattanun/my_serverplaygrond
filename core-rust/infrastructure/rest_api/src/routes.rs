@@ -9,12 +9,13 @@ use model::{
     auth_model::{AuthFormatError, UserLogin, UserSingup},
     jwt::TokenResponse,
 };
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{error, info, warn};
 use use_case::{AuthUserCase, AuthUserCaseError, MasterUseCase};
 
 use crate::{
-    dto::{MasterUpdateReq, UserLoginReq, UserSingupReq},
+    dto::{MasterUpdateReq, TokenReq, UserLoginReq, UserSingupReq},
     err_map::ErrorToHttp,
 };
 use http::{HeaderValue, Method};
@@ -123,11 +124,11 @@ pub async fn singup(
 }
 pub async fn logout(
     State(state): State<AppState>,
-    Json(raw): Json<TokenResponse>,
+    Json(raw): Json<TokenReq>,
 ) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
     state
         .svc
-        .logout(raw)
+        .logout(raw.token)
         .await
         .map_err(|e: AuthUserCaseError| {
             warn!(error=%e,"App error : ");
@@ -141,13 +142,17 @@ pub async fn logout(
         })),
     ))
 }
+#[derive(Debug, Deserialize)]
+pub struct RefreshReq {
+    token: TokenResponse,
+}
 pub async fn refresh(
     State(state): State<AppState>,
-    Json(raw): Json<TokenResponse>,
+    Json(raw): Json<RefreshReq>,
 ) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
     let token = state
         .svc
-        .refresh_token(raw)
+        .refresh_token(raw.token)
         .await
         .map_err(|e: AuthUserCaseError| {
             warn!(error=%e,"App error : ");
@@ -164,7 +169,6 @@ pub async fn refresh(
             "expires_in": token.expires_in,
             "token_type": token.token_type,
         }
-
         })),
     ))
 }

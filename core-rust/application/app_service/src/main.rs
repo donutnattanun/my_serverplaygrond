@@ -41,7 +41,7 @@ async fn main() -> anyhow::Result<()> {
     let time_repo = Arc::new(TimeSystemService::new());
     let rt_repo = Arc::new(RefreshTokenService::new());
     let policy_repo = Arc::new(CashPolicyInMemoty::new(1));
-    let auth_cfg = AuthConfig::new(env.ss_ttl, env.rt_ttl, env.ss_ttl);
+    let auth_cfg = AuthConfig::new(env.at_ttl, env.rt_ttl, env.ss_ttl);
     info!("Dependency Injection success");
     //----buid app state -----//
     let master_service = MasterService::new(

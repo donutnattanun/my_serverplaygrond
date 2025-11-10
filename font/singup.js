@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:3000";
+const API_BASE = "http://127.0.0.1:3000";
 
 const form = document.getElementById("signupForm");
 const btn = document.getElementById("signupBtn");
@@ -17,14 +17,14 @@ form.addEventListener("submit", async (e) => {
   const password = passEl.value.trim();
 
   if (!username || !email || !password) {
-    alert("กรอกให้ครบก่อนนะ 😅");
+    alert("กรอกให้ครบก่อนนะ ");
     return;
   }
 
   btn.disabled = true;
 
   try {
-    const res = await fetch(`${API_BASE}/newuser`, {
+    const res = await fetch(`${API_BASE}/auth/singup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, email, password }),
@@ -39,7 +39,6 @@ form.addEventListener("submit", async (e) => {
     const data = await res.json();
     alert(`Signup success!\n${JSON.stringify(data, null, 2)}`);
 
-    // กลับไปหน้า login
     location.href = "/index.html";
   } catch (err) {
     alert(`Network error: ${err}`);

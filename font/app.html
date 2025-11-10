@@ -1,28 +1,117 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>App</title>
-  <link rel="stylesheet" href="/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimal Auth Flow Demo</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0b0d12;
+      color: #e6e8ea;
+      margin: 0;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+    .card {
+      background: #131722;
+      border: 1px solid #23293a;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+    }
+    .top-card {
+      text-align: center;
+      width: 100%;
+      max-width: 700px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      width: 100%;
+      max-width: 900px;
+    }
+    .btn {
+      background: #3b82f6;
+      border: none;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    .btn.alt { background: #0ea5e9; }
+    pre {
+      background: #0f1320;
+      border: 1px solid #1e2435;
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+  .badge{padding:4px 8px;border-radius:999px;border:1px solid #23293a}
+  .badge-ok{background:#0f2b18;border-color:#14532d;color:#86efac}
+  .badge-down{background:#2b0f12;border-color:#7f1d1d;color:#fca5a5}
+  .badge-gray{background:#0f1320;color:#a8adb7}
+  .svc-row{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border:1px solid #1e2435;border-radius:8px;background:#0f1320;margin:6px 0}
+  .svc-name{opacity:.9}  
+    </style>
 </head>
 <body>
-  <div class="card center">
-    <h2>Welcome 🎉</h2>
-    <p>Logged in successfully. (หน้านี้ยังว่าง ตามสเปก)</p>
-    <div style="margin-top:14px">
-      <button class="btn" id="logoutBtn">Logout</button>
+  <div class="card top-card">
+    <h2>Welcome</h2>
+    <p>Token จาก Rust Auth / เรียก Go Gateway / Refresh Token</p>
+  </div>
+
+  <div class="grid">
+    <div class="card" style="grid-column: 1 / -1">
+      <h3>Rust /check — Service Status</h3>
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:10px">
+        <span>Overall:</span>
+        <span id="rustOverall" class="badge badge-gray">—</span>
+        <span id="rustLatency" class="badge badge-gray">—</span>
+        <span id="rustClockSkew" class="badge badge-gray">—</span>
+        <span id="rustCheckedAt" style="opacity:.7;font-size:12px"></span>
+      </div>
+          <div id="rustSvcList"></div>
+    </div>
+    <div class="card" style="grid-column: 1 / -1">
+      <h3>Go /go/check — Service Status</h3>
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:10px">
+          <span>Overall:</span>
+          <span id="goOverall" class="badge badge-gray">—</span>
+          <span id="goLatency" class="badge badge-gray">—</span>
+          <span id="goCheckedAt" style="opacity:.7;font-size:12px"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Rust Auth</h3>
+          <pre id="tokenBox">(token จะโชว์ที่นี่)</pre>
+          <button class="btn" id="copyToken">Copy Token</button>
+          <button class="btn" id="logoutBtn" style="background:#ef4444">Logout</button>
+    </div> 
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <h3>Call Go Gateway</h3>
+          <button class="btn alt" id="btnCallGateway">Call /whoami</button>
+          <pre id="gatewayOut">(ผลลัพธ์จะโชว์ที่นี่)</pre>
+      </div>
+      <div class="card">
+        <h3>Refresh Token</h3>
+        <button class="btn" id="btnRefresh">Refresh</button>
+        <pre id="refreshOut">(ผลลัพธ์ refresh)</pre>
+      </div>
     </div>
   </div>
 
-  <script type="module">
-    // ถ้ามี JWT เก็บไว้ — จะเช็คได้ตรงนี้ (ตอนนี้ optional)
-    // ถ้าอยากบังคับให้ต้องมี token ค่อยใส่ redirect กลับหน้า /index.html
-
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('token'); // ถ้าเก็บไว้
-      location.href = '/index.html';
-    });
-  </script>
-</body>
+  <script type="module" src="/app.js"></script>
+  </body>
 </html>
 

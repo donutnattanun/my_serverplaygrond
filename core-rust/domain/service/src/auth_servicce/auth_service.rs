@@ -201,14 +201,14 @@ impl AuthUserCase for AuthService {
         info!(username=%order.username,"singup success");
         Ok(())
     }
-    async fn logout(&self, order: TokenResponse) -> Result<LogoutResult, AuthUserCaseError> {
+    async fn logout(&self, order: String) -> Result<LogoutResult, AuthUserCaseError> {
         // fn decoder have validate inside //
         let claim = self
             .jwt_repo
-            .decoder(&order.access_token)
+            .decoder(&order)
             .await
             .map_err(|e| {
-                error!(error=%e,ac_token=%order.access_token,"jwtRepofail ");
+                error!(error=%e,ac_token=%order,"jwtRepofail ");
                 AuthUserCaseError::JwtRepofail(e.to_string())
             })?;
         let deleted = self

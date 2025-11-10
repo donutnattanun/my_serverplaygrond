@@ -66,7 +66,6 @@ impl ErrorToHttp for AuthUserCaseError {
                 Json(json!({ "error": msg })),
             ),
 
-            // เผื่อ case อื่น ๆ ในอนาคต
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "error": "unknown error" })),

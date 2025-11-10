@@ -8,7 +8,7 @@ use thiserror::Error;
 pub trait AuthUserCase: Send + Sync {
     async fn login(&self, order: UserLogin) -> Result<TokenResponse, AuthUserCaseError>;
     async fn singup(&self, order: UserSingup) -> Result<(), AuthUserCaseError>;
-    async fn logout(&self, order: TokenResponse) -> Result<LogoutResult, AuthUserCaseError>;
+    async fn logout(&self, order: String) -> Result<LogoutResult, AuthUserCaseError>;
     async fn refresh_token(&self, order: TokenResponse)
     -> Result<TokenResponse, AuthUserCaseError>;
 }
