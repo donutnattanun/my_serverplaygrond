@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
     let hash_repo = Arc::new(HashService::new_default(secret_key.hmac_key));
     let pool = PgPoolOptions::new()
         .max_connections(5)
-        .acquire_timeout(Duration::from_secs(10))
+        .acquire_timeout(Duration::from_secs(3))
         .connect(&env.database_url)
         .await?;
     let user_repo = Arc::new(SqlxUserRepo::new(pool.clone()));

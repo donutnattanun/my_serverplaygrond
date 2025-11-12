@@ -2,8 +2,8 @@
 // app.js
 //import { saveAuth, loadAuth, clearAuth } from "./login.js";
 
-const GO_GATEWAY_BASE = "http://127.0.0.1:8080";
-const RUST_AUTH_BASE = "http://127.0.0.1:3000";
+const GO_GATEWAY_BASE = "http://localhost:8080";
+const RUST_AUTH_BASE = "http://localhost:3000";
 
 const tokenBox = document.getElementById('tokenBox');
 const gatewayOut = document.getElementById('gatewayOut');

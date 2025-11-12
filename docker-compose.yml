@@ -33,7 +33,7 @@ services:
       context: ./core-rust
       dockerfile: DockerFile
     env_file: 
-      - ./core-rust/.env
+      - ./core-rust/example.env
     depends_on:
       redis:
         condition: service_healthy
@@ -70,3 +70,27 @@ services:
         "
       '
     restart: "no"
+  #go-gateway
+  go-gateway:
+    build:
+      context: ./go-gateway
+      dockerfile: DockerFile
+    container_name: go-gateway
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./go-gateway/example.env
+    depends_on:
+      - redis
+  #front
+  frontend:
+    build:
+      context: ./front
+      dockerfile: DockerFile
+    container_name: front-app
+    ports:
+      - "5173:5173" 
+    depends_on:
+      - go-gateway
+      - rust-core
+

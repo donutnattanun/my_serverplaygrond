@@ -13,7 +13,7 @@ COPY infrastructure infrastructure
 COPY interface interface
 COPY application application
 COPY utils utils
-COPY security security
+COPY example.security security
 COPY migrations migrations
 
 # install sqlx for seed db 
@@ -35,8 +35,8 @@ COPY --from=builder /app/target/release/app_service /usr/local/bin/app_service
 COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/sqlx
 
 # copy env + keys
-COPY .env /app/.env
-COPY security /app/security
+COPY example.env /app/.env
+COPY example.security /app/security
 COPY migrations /app/migrations
 
 # default entrypoint

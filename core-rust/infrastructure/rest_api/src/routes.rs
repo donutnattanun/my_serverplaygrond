@@ -19,7 +19,7 @@ use crate::{
     err_map::ErrorToHttp,
 };
 use http::{HeaderValue, Method};
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{self, Any, CorsLayer};
 
 #[derive(Clone)]
 pub struct SharedState {
@@ -33,10 +33,15 @@ type AppState = SharedState;
 
 pub fn routes(state: AppState) -> Router {
     let cors = CorsLayer::new()
-        .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
-        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
-        .allow_headers([http::header::CONTENT_TYPE, http::header::AUTHORIZATION])
-        .allow_credentials(true);
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
+
+    // let cors = CorsLayer::new()
+    //     .allow_origin("http://0.0.0.0:5173".parse::<HeaderValue>().unwrap())
+    //    .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+    //    .allow_headers([http::header::CONTENT_TYPE, http::header::AUTHORIZATION])
+    //    .allow_credentials(true);
     Router::new()
         .route("/auth/login", post(login))
         .route("/auth/singup", post(singup))
