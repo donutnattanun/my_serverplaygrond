@@ -1,19 +1,17 @@
-use std::{clone, sync::Arc};
+use std::sync::Arc;
 
-use crate::auth_servicce::auth_service::AuthService;
 use async_trait::async_trait;
 use model::{
-    auth_model::{PasswordHash, PasswordPlain, UserLogin, UserSingup},
+    auth_model::PasswordHash,
     jwt::{AuthConfig, Claims, SessionRecordBuild},
-    jwt_key_model::jwt::{SessionRecord, TokenResponse},
+    jwt_key_model::jwt::SessionRecord,
     users::{AccountStatus, Role, Users},
     users_model::users,
 };
 use tokio::sync::RwLock;
 use use_case::{
-    AuthRepo, AuthUserCase, AuthUserCaseError, HashRepo, HasherError, JwtRepo, JwtRepoError,
-    LogoutResult, PolicyRepo, PolicyRepoError, RefreshRepo, RefreshToken, TimeSystemRepo, UserRepo,
-    UserRepoError, VerifyStatus,
+    AuthRepo, HashRepo, HasherError, JwtRepo, JwtRepoError, PolicyRepo, PolicyRepoError,
+    RefreshRepo, RefreshToken, TimeSystemRepo, UserRepo, UserRepoError, VerifyStatus,
 };
 use uuid::Uuid;
 
@@ -356,12 +354,16 @@ impl PolicyRepo for FakePolicyMasterRepo {
 // =============== tests =============== //
 #[cfg(test)]
 mod tests {
-    use crate::MasterService;
+    use crate::{AuthService, MasterService};
 
     use super::*;
+    use model::{
+        auth_model::{PasswordPlain, UserLogin},
+        jwt::TokenResponse,
+    };
     use std::sync::Arc;
     use tokio::sync::RwLock;
-    use use_case::MasterUseCase;
+    use use_case::{AuthUserCase, AuthUserCaseError, MasterUseCase};
 
     // ----- test support -----
     fn make_master_service(fack_poliy: Arc<FakePolicyMasterRepo>) -> MasterService {

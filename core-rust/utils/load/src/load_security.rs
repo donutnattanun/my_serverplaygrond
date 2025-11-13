@@ -1,4 +1,3 @@
-use core::error;
 use jsonwebtoken::{DecodingKey, EncodingKey};
 use std::fs;
 use thiserror::Error;

@@ -1,6 +1,5 @@
 use model::auth_model::{PasswordHash, PasswordPlain};
 use thiserror::Error;
-use tokio::sync::mpsc::error;
 
 #[async_trait::async_trait]
 pub trait HashRepo: Send + Sync {

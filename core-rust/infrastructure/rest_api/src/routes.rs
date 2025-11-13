@@ -9,17 +9,16 @@ use model::{
     auth_model::{AuthFormatError, UserLogin, UserSingup},
     jwt::TokenResponse,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::sync::Arc;
-use tracing::{error, info, warn};
+use tracing::warn;
 use use_case::{AuthUserCase, AuthUserCaseError, MasterUseCase};
 
 use crate::{
     dto::{MasterUpdateReq, TokenReq, UserLoginReq, UserSingupReq},
     err_map::ErrorToHttp,
 };
-use http::{HeaderValue, Method};
-use tower_http::cors::{self, Any, CorsLayer};
+use tower_http::cors::{Any, CorsLayer};
 
 #[derive(Clone)]
 pub struct SharedState {

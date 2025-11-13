@@ -1,19 +1,16 @@
 use async_trait::async_trait;
 use model::{
-    auth_model::{PasswordHash, PasswordPlain, UserLogin, UserSingup},
+    auth_model::PasswordHash,
     jwt::{AuthConfig, Claims, SessionRecordBuild},
-    jwt_key_model::jwt::{SessionRecord, TokenResponse},
+    jwt_key_model::jwt::SessionRecord,
     users::{AccountStatus, Role, Users},
     users_model::users,
 };
 use use_case::{
-    AuthRepo, AuthUserCase, AuthUserCaseError, HashRepo, HasherError, JwtRepo, JwtRepoError,
-    LogoutResult, PolicyRepo, RefreshRepo, RefreshToken, TimeSystemRepo, UserRepo, UserRepoError,
-    VerifyStatus,
+    AuthRepo, HashRepo, HasherError, JwtRepo, JwtRepoError, PolicyRepo, RefreshRepo, RefreshToken,
+    TimeSystemRepo, UserRepo, UserRepoError, VerifyStatus,
 };
 use uuid::Uuid;
-
-use crate::auth_servicce::auth_service::AuthService;
 
 // =============== fakes =============== //
 
@@ -309,6 +306,14 @@ impl PolicyRepo for FakePolicyRepo {
 // =============== tests =============== //
 #[cfg(test)]
 mod tests {
+    use model::{
+        auth_model::{PasswordPlain, UserLogin, UserSingup},
+        jwt::TokenResponse,
+    };
+    use use_case::{AuthUserCase, AuthUserCaseError, LogoutResult};
+
+    use crate::AuthService;
+
     use super::*;
     use std::sync::{Arc, RwLock};
 

@@ -65,11 +65,6 @@ impl ErrorToHttp for AuthUserCaseError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "error": msg })),
             ),
-
-            _ => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "error": "unknown error" })),
-            ),
         }
     }
 }

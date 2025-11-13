@@ -3,7 +3,6 @@ use model::{
     auth_model::PasswordHash,
     users::{AccountStatus, Role, Users},
 };
-use sqlx::error;
 use thiserror::Error;
 use uuid::Uuid;
 

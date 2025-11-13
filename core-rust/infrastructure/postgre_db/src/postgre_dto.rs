@@ -3,7 +3,6 @@ use model::{
     users::{AccountStatus, Role},
 };
 use use_case::UserRepoError;
-use uuid::Uuid;
 
 //----dto-----//
 #[derive(sqlx::FromRow)]

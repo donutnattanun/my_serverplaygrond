@@ -1,6 +1,6 @@
 use std::sync::Arc;
-use model::users::{AccountStatus, Role};
-use tracing::{error, info, warn};
+use model::users::Role;
+use tracing::{error, warn};
 
 use async_trait::async_trait;
 use use_case::{
